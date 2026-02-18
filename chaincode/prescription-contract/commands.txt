@@ -1,0 +1,5 @@
+./network.sh deployCC -ccn prescription \
+  -ccp ../chaincode/prescription-contract \
+  -ccv 1.0 \
+  -ccl javascript \
+  -ccs 1

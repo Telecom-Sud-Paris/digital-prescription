@@ -1,0 +1,5 @@
+./network.sh deployCC -ccn trusted-issuer \
+  -ccp ../chaincode/trusted-issuer-contract \
+  -ccv 1.0 \
+  -ccl javascript \
+  -ccs 1

@@ -1,0 +1,15 @@
+{
+    "name": "prescription-contract",
+    "version": "1.0.0",
+    "description": "Smart Contract para Gestão de Prescrições e Linkagem de Produtos",
+    "engines": {
+        "node": ">=20"
+    },
+    "scripts": {
+        "start": "node testing.js"
+    },
+    "dependencies": {
+        "fabric-network": "^2.2.20",
+        "fabric-ca-client": "^2.2.20"
+    }
+}

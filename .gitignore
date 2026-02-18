@@ -1,0 +1,4 @@
+bin/
+config/
+install-fabric.sh
+node_modules/
