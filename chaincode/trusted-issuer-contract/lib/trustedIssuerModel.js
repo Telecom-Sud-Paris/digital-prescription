@@ -7,7 +7,7 @@ class TrustedIssuer {
         this.role = role; // 'government', 'doctor', 'pharmacy'
         this.addedBy = addedBy; 
         this.active = true;
-        this.registeredAt = new Date().toISOString();
+        this.registeredAt = null;
     }
 }
 

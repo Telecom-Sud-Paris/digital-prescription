@@ -1,0 +1,5 @@
+./network.sh deployCC -ccn revocation-registry \
+  -ccp ../chaincode/revocation-registry-contract \
+  -ccv 1.0 \
+  -ccl javascript \
+  -ccs 1

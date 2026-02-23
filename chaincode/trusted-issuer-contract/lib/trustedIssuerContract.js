@@ -34,6 +34,7 @@ class TrustedIssuerContract extends Contract {
         }
 
         const newIssuer = new TrustedIssuer(DID, role, addedByDID);
+        newIssuer.registeredAt = new Date(ctx.stub.getTxTimestamp().seconds.low * 1000).toISOString();
         const buffer = ContractUtils.objToBuffer(newIssuer);
         
         await ctx.stub.putState(DID, buffer);
