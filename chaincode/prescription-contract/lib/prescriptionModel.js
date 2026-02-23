@@ -6,13 +6,13 @@ class PrescriptionState {
      * @param {string} issuerDID - doctor did
      * @param {number} refillCounter - allowed repetitions
      */
-    constructor(id, issuerDID, refillCounter, validityPeriod) {
+    constructor(id, issuerDID, refillCounter, expirationDate) {
         this.docType = 'prescription';
         this.id = id;
         this.issuerDID = issuerDID;
         this.refillCounter = parseInt(refillCounter); 
         this.status = 'active';
-        this.validityPeriod = validityPeriod;
+        this.expirationDate = expirationDate;
         this.lastUpdated = null
         
         //upon dispense

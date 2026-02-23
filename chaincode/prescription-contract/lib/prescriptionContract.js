@@ -47,6 +47,24 @@ class PrescriptionContract extends Contract {
         return true;
     }
 
+    /*
+    verify that the prescription isnt revoked in the revocation registry
+    */
+    async verifyRevocation(ctx, id){
+        const chaincodeName = 'revocation-registry';
+        const channelName = ctx.stub.getChannelID(); //mychannel
+        const args = [
+            'validateCredential',
+            id
+        ];
+        const argsBuffer = args.map(arg => Buffer.from(arg));
+        const response = await ctx.stub.invokeChaincode(chaincodeName, argsBuffer, channelName);
+
+        if (response.status !== 200) {
+            throw new Error(`Fail ${id}: ${response.message}`);
+        }
+    }
+     
     /**
      * prescriptionExists
      * @returns {boolean} 
@@ -64,9 +82,10 @@ class PrescriptionContract extends Contract {
     async prescriptionStillActive(ctx, id) {
         try {
             const prescription = await this.getPrescriptionHelper(ctx, id);
-            const isActiveStatus = (prescription.status === 'active');
+            const isActive = (prescription.status === 'active');
             const hasRefills = (prescription.refillCounter > 0);
-            return (isActiveStatus && hasRefills);
+            const notRevoked = await this.verifyRevocation(ctx, id);
+            return (isActive && hasRefills && notRevoked);
         } catch (err) {
             return false;
         }
@@ -74,13 +93,28 @@ class PrescriptionContract extends Contract {
 
     // ====== main ======
 
-    async createPrescription(ctx, id, issuerDID, refillCounter, validityPeriod) {
+    async initLedger(ctx) {
+        console.info('Initializing Ledger with sample prescriptions...');
+        const prescriptions = [
+            new PrescriptionState('urn:uuid:67890', 'did:doctor:1234567890abcdef', 3, '2026-12-31'),
+            new PrescriptionState('urn:uuid:54321', 'did:doctor:1234567890abcdef', 1, '2025-11-30'), //will fail due to expiration date
+            new PrescriptionState('urn:uuid:98765', 'did:doctor:9876543210fedcba', 1, '2026-10-31') //will fail cause doctor not in registry
+        ];
+        
+        for (const prescription of prescriptions) {
+            prescription.lastUpdated = new Date(ctx.stub.getTxTimestamp().seconds.low * 1000).toISOString();
+            await ctx.stub.putState(prescription.id, ContractUtils.objToBuffer(prescription));
+            console.info(`Prescription ${prescription.id} initialized`);
+        }
+    }
+
+    async createPrescription(ctx, id, issuerDID, refillCounter, expirationDate) {
         const exists = await this.prescriptionExists(ctx, id);
         if (exists) {
             throw new Error(`The prescription ${id} already exists`);
         }
         await this.verifyRoleInRegistry(ctx, issuerDID, 'doctor');
-        const prescription = new PrescriptionState(id, issuerDID, refillCounter, validityPeriod);
+        const prescription = new PrescriptionState(id, issuerDID, refillCounter, expirationDate);
         prescription.lastUpdated = new Date(ctx.stub.getTxTimestamp().seconds.low * 1000).toISOString();
         
         const buffer = ContractUtils.objToBuffer(prescription);

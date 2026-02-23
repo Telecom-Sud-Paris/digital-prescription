@@ -11,7 +11,6 @@ class RevocationRegistryContract extends Contract {
     }
 
     async initLedger(ctx) {
-        console.log('Revocation Registry Ledger Initialized');
     }
 
     async registerCredential(ctx, id, subject, issuer, credentialType, expirationDate, credentialHash) {
@@ -31,7 +30,7 @@ class RevocationRegistryContract extends Contract {
         return JSON.stringify(entry);
     }
 
-    async validateCredential(ctx, id, requiredType) {
+    async validateCredential(ctx, id) {
         try {
             const entry = await this.getCredentialHelper(ctx, id);
             
@@ -42,7 +41,7 @@ class RevocationRegistryContract extends Contract {
 
             if (entry.expirationDate) {
                 const expDate = new Date(entry.expirationDate);
-                const now = new Date();
+                const now = new Date(ctx.stub.getTxTimestamp().seconds.low * 1000);
                 if (now > expDate) {
                     throw new Error(`Credential ${id} has expired.`);
                 }

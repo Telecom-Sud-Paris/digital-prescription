@@ -12,18 +12,22 @@ class TrustedIssuerContract extends Contract {
     }
 
     async initLedger(ctx) {
-        const DID = "did:web:gov.example.country";
-        const issuerDID = "did:web:global-governance-authority"
-        const role = "government"
-        const trustedIssuer = new TrustedIssuer(DID, role, issuerDID)
-        const buffer = ContractUtils.objToBuffer(trustedIssuer);
-        await ctx.stub.putState(DID, buffer);
-
-        console.log(`Initialized Registry. Root Authority: ${DID}`);
-        return JSON.stringify(trustedIssuer);
+        const issuers = [
+            new TrustedIssuer('did:web:gov.example.country', 'government', 'MSPAdmin'),
+            new TrustedIssuer('did:doctor:1234567890abcdef', 'doctor', 'did:web:gov.example.country'),
+            new TrustedIssuer('did:pharmacy:1234567890abcdef', 'pharmacy', 'did:web:gov.example.country')
+        ];
+        
+        for (const issuer of issuers) {
+            issuer.registeredAt = new Date(ctx.stub.getTxTimestamp().seconds.low * 1000).toISOString();
+            const buffer = ContractUtils.objToBuffer(issuer);
+            await ctx.stub.putState(issuer.did, buffer);
+        }
+        console.log(`Trusted Issuer Registry\n ${issuers}`);
     }
+    
 
-    async registerIssuer(ctx, DID, role, addedByDID) {
+    async registerIssuer(ctx, DID, role, addedBy) {
         const exists = await this.issuerExists(ctx, DID);
         if (exists) {
             throw new Error(`Issuer ${DID} already registered.`);
@@ -33,7 +37,7 @@ class TrustedIssuerContract extends Contract {
             throw new Error(`invalid role: ${role}. allowed: ${allowedRoles.join(', ')}`);
         }
 
-        const newIssuer = new TrustedIssuer(DID, role, addedByDID);
+        const newIssuer = new TrustedIssuer(DID, role, addedBy);
         newIssuer.registeredAt = new Date(ctx.stub.getTxTimestamp().seconds.low * 1000).toISOString();
         const buffer = ContractUtils.objToBuffer(newIssuer);
         
