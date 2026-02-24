@@ -80,27 +80,21 @@ class PrescriptionContract extends Contract {
      * @returns {boolean}
      */
     async prescriptionIsValid(ctx, id) {
-        try {
-            const prescription = await this.getPrescriptionHelper(ctx, id);
-            console.info(`Prescription ${id} status: ${prescription.status}, refills: ${prescription.refillCounter}`);
-            const isActive = (prescription.status === 'active');
-            if (!isActive) {
-                console.info(isActive)
-                throw new Error(`Prescription ${id} is not active.`);
-            }
-            const hasRefills = (prescription.refillCounter > 0);
-            if (!hasRefills) {
-                throw new Error(`Prescription ${id} has no refills left.`);
-            }
-            const notRevoked = await this.verifyRevocation(ctx, id);
-            if (!notRevoked) {
-                console.info(notRevoked)
-                throw new Error(`Prescription ${id} has been revoked.`);
-            }
-
-        } catch (err) {
-            return false;
+        const prescription = await this.getPrescriptionHelper(ctx, id);
+        console.info(`Prescription ${id} status: ${prescription.status}, refills: ${prescription.refillCounter}`);
+        
+        const isActive = (prescription.status === 'active');
+        if (!isActive) {
+            throw new Error(`Prescription ${id} is not active. Current status: ${prescription.status}`);
         }
+        
+        const hasRefills = (prescription.refillCounter > 0);
+        if (!hasRefills) {
+            throw new Error(`Prescription ${id} has no refills left.`);
+        }
+    
+        await this.verifyRevocation(ctx, id);
+        return true; 
     }
 
     /**
@@ -176,10 +170,9 @@ class PrescriptionContract extends Contract {
      */
     async dispensePrescription(ctx, id, pharmacyDID, productLinkID) {
         await this.prescriptionIsValid(ctx, id);
-        await this.verifyRoleInRegistry(ctx, pharmacyDID, 'pharmacy');
         
         const prescription = await this.getPrescriptionHelper(ctx, id);
-
+       
         prescription.refillCounter--; 
         if (prescription.refillCounter === 0) {
             prescription.status = "completed"; 
