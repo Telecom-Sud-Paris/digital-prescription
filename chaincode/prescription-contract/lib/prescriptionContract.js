@@ -75,22 +75,68 @@ class PrescriptionContract extends Contract {
     }
 
     /**
-     * prescriptionStillActive
+     * prescriptionIsValid
      * status active e Refills > 0
      * @returns {boolean}
      */
-    async prescriptionStillActive(ctx, id) {
+    async prescriptionIsValid(ctx, id) {
         try {
             const prescription = await this.getPrescriptionHelper(ctx, id);
+            console.info(`Prescription ${id} status: ${prescription.status}, refills: ${prescription.refillCounter}`);
             const isActive = (prescription.status === 'active');
+            if (!isActive) {
+                console.info(isActive)
+                throw new Error(`Prescription ${id} is not active.`);
+            }
             const hasRefills = (prescription.refillCounter > 0);
+            if (!hasRefills) {
+                throw new Error(`Prescription ${id} has no refills left.`);
+            }
             const notRevoked = await this.verifyRevocation(ctx, id);
-            return (isActive && hasRefills && notRevoked);
+            if (!notRevoked) {
+                console.info(notRevoked)
+                throw new Error(`Prescription ${id} has been revoked.`);
+            }
+
         } catch (err) {
             return false;
         }
     }
 
+    /**
+     * readPrescription
+     * prescription current state
+     */
+    async readPrescription(ctx, id) {
+        const prescription = await this.getPrescriptionHelper(ctx, id);
+        return JSON.stringify(prescription);
+    }
+
+    async queryAllPrescriptions(ctx) {
+        const startKey = '';
+        const endKey = '';
+        const allResults = [];
+        const iterator = await ctx.stub.getStateByRange(startKey, endKey);
+        let result = await iterator.next();
+        
+        while (!result.done) {
+            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
+            let record;
+            try {
+                record = JSON.parse(strValue);
+            } catch (err) {
+                console.info(err);
+                record = strValue;
+            }
+            if (record.docType === 'prescription') {
+                allResults.push({ Key: result.value.key, Record: record });
+            }
+      
+            result = await iterator.next();
+        }
+        return JSON.stringify(allResults);
+    }
+    
     // ====== main ======
 
     async initLedger(ctx) {
@@ -120,7 +166,7 @@ class PrescriptionContract extends Contract {
         const buffer = ContractUtils.objToBuffer(prescription);
         await ctx.stub.putState(id, buffer);
 
-        console.log(`Prescription created: ${id} with ${refillCounter} refills.`);
+        console.info(`Prescription created: ${id} with ${refillCounter} refills.`);
         return JSON.stringify(prescription);
     }
 
@@ -128,11 +174,8 @@ class PrescriptionContract extends Contract {
      * prescriptionDispense
      * run by pharmacy. Dispense and link to physical product
      */
-    async prescriptionDispense(ctx, id, pharmacyDID, productLinkID) {
-        const isActive = await this.prescriptionStillActive(ctx, id);
-        if (!isActive) {
-            throw new Error(`Prescription ${id} is not active.`);
-        }
+    async dispensePrescription(ctx, id, pharmacyDID, productLinkID) {
+        await this.prescriptionIsValid(ctx, id);
         await this.verifyRoleInRegistry(ctx, pharmacyDID, 'pharmacy');
         
         const prescription = await this.getPrescriptionHelper(ctx, id);
@@ -140,9 +183,9 @@ class PrescriptionContract extends Contract {
         prescription.refillCounter--; 
         if (prescription.refillCounter === 0) {
             prescription.status = "completed"; 
-            console.log(`Prescription ${id} fully dispensed. Status set to COMPLETED.`);
+            console.info(`Prescription ${id} fully dispensed. Status set to COMPLETED.`);
         }else{
-            console.log(`Prescription ${id} partially dispensed. Refills remaining: ${prescription.refillCounter}`);
+            console.info(`Prescription ${id} partially dispensed. Refills remaining: ${prescription.refillCounter}`);
 
         }
 
@@ -164,39 +207,7 @@ class PrescriptionContract extends Contract {
         return JSON.stringify(prescription);
     }
 
-    /**
-     * readPrescription
-     * prescription current state
-     */
-    async readPrescription(ctx, id) {
-        const prescription = await this.getPrescriptionHelper(ctx, id);
-        return JSON.stringify(prescription);
-    }
-
-    async queryAllPrescriptions(ctx) {
-        const startKey = '';
-        const endKey = '';
-        const allResults = [];
-        const iterator = await ctx.stub.getStateByRange(startKey, endKey);
-        let result = await iterator.next();
-        
-        while (!result.done) {
-            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
-            let record;
-            try {
-                record = JSON.parse(strValue);
-            } catch (err) {
-                console.log(err);
-                record = strValue;
-            }
-            if (record.docType === 'prescription') {
-                allResults.push({ Key: result.value.key, Record: record });
-            }
-      
-            result = await iterator.next();
-        }
-        return JSON.stringify(allResults);
-    }
+    
 }
 
 

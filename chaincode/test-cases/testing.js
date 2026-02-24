@@ -19,7 +19,7 @@ const chaincodePrescription = 'prescription';
 const chaincodeRevocationRegistry = 'revocation-registry';
 const mspOrg1 = 'Org1MSP';
 const walletPath = path.join(__dirname, 'wallet');
-const org1UserId = 'test-user';
+const org1UserId = 'test-CASE';
 
 
 function prettyJSONString(inputString) {
@@ -49,23 +49,29 @@ async function main() {
         });
 
         const network = await gateway.getNetwork(channelName);
-        chaincodeTrustedIssuer = network.getContract(chaincodeTrustedIssuer);
-        chaincodePrescription = network.getContract(chaincodePrescription);
-        chaincodeRevocationRegistry = network.getContract(chaincodeRevocationRegistry);
+        const contractTrustedIssuer = network.getContract(chaincodeTrustedIssuer);
+        const contractPrescription = network.getContract(chaincodePrescription);
+        const contractRevocationRegistry = network.getContract(chaincodeRevocationRegistry);
         
         console.log('Fabric connection successful. Contract objects are ready.');
-    
-        const check = await chaincodeTrustedIssuer.evaluateTransaction('initLedger');
+        
+        /*
+        const check = await contractTrustedIssuer.submitTransaction('initLedger');
         console.log(`${check.toString()}`);
 
-        const check2 = await chaincodePrescription.evaluateTransaction('initLedger');
+        const check2 = await contractPrescription.submitTransaction('initLedger');
         console.log(`${check2.toString()}`);
 
-        const check3 = await chaincodeRevocationRegistry.evaluateTransaction('initLedger');
+        const check3 = await contractRevocationRegistry.submitTransaction('initLedger');
         console.log(`${check3.toString()}`);
+        */
 
-        
-
+        const allPrescriptions = await contractPrescription.evaluateTransaction('queryAllPrescriptions');
+        console.log(`All prescriptions: ${prettyJSONString(allPrescriptions.toString())}`);
+        const prescription = await contractPrescription.evaluateTransaction('readPrescription', 'urn:uuid:54321');
+        console.log(`Prescription details: ${prettyJSONString(prescription.toString())}`);
+        //const dispense= await contractPrescription.submitTransaction('dispensePrescription', 'urn:uuid:54321', 'did:pharmacy:1234567890abcdef', "produto");
+        //console.log(`Dispense result: ${dispense.toString()}`);
     } catch (error) {
         console.error(`******** FAILED to connect to Fabric network: ${error}`);
         process.exit(1); 

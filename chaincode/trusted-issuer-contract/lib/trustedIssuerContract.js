@@ -15,6 +15,8 @@ class TrustedIssuerContract extends Contract {
         const issuers = [
             new TrustedIssuer('did:web:gov.example.country', 'government', 'MSPAdmin'),
             new TrustedIssuer('did:doctor:1234567890abcdef', 'doctor', 'did:web:gov.example.country'),
+            new TrustedIssuer('did:doctor:45678910', 'doctor', 'did:web:gov.example.country'),
+
             new TrustedIssuer('did:pharmacy:1234567890abcdef', 'pharmacy', 'did:web:gov.example.country')
         ];
         
@@ -23,7 +25,7 @@ class TrustedIssuerContract extends Contract {
             const buffer = ContractUtils.objToBuffer(issuer);
             await ctx.stub.putState(issuer.did, buffer);
         }
-        console.log(`Trusted Issuer Registry\n ${issuers}`);
+        console.info(`Trusted Issuer Registry\n ${issuers}`);
     }
     
 
@@ -44,7 +46,7 @@ class TrustedIssuerContract extends Contract {
         await ctx.stub.putState(DID, buffer);
         
         ctx.stub.setEvent('IssuerRegistered', Buffer.from(JSON.stringify(newIssuer)));
-        console.log(`New Issuer registered: ${DID} as ${role}`);
+        console.info(`New Issuer registered: ${DID} as ${role}`);
         return JSON.stringify(newIssuer);
     }
 
@@ -58,7 +60,7 @@ class TrustedIssuerContract extends Contract {
             if (issuer.role !== requiredRole) {
                 throw new Error(`ERROR: Unmatching role. DID has role '${issuer.role}', but expected '${requiredRole}'.`);
             }
-            console.log(`${DID} successfully validated as ${requiredRole}.`);
+            console.info(`${DID} successfully validated as ${requiredRole}.`);
             return Buffer.from('true'); 
         } catch (err) {
             throw new Error(err.message);
@@ -74,7 +76,7 @@ class TrustedIssuerContract extends Contract {
         const issuer = await this.getIssuerHelper(ctx, DID)
         issuer.active = false;
         await ctx.stub.putState(DID, ContractUtils.objToBuffer(issuer));
-        console.log(`${DID} had its issuer rights revoked`)
+        console.info(`${DID} had its issuer rights revoked`)
         return JSON.stringify(issuer);
     }
 
@@ -106,7 +108,7 @@ class TrustedIssuerContract extends Contract {
             try {
                 record = JSON.parse(strValue);
             } catch (err) {
-                console.log(err);
+                console.info(err);
                 record = strValue;
             }
             if (record.docType === 'trusted-issuer') {

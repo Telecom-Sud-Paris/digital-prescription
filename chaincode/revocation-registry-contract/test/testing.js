@@ -53,23 +53,24 @@ async function main() {
         const check = await contract.evaluateTransaction('queryAllCredentials');
         console.log(`${check.toString()}`);
 
-        /*
+        
         const entry = await contract.submitTransaction(
             "registerCredential", 
-            "urn:uuid:12345", 
+            "urn:uuid:125", 
             "subject12", 
             "issuer12", 
             "type1", 
-            "2025-12-31", 
+            "2026-12-31", 
             "hash123");
         console.log(`${prettyJSONString(entry.toString())}`);
-        */
         
+        /*
         const revocation = await contract.submitTransaction(
             "revokeCredential", 
             "urn:uuid:12345", 
             "KeyCompromise");
         console.log(`${prettyJSONString(revocation.toString())}`);
+        */
 
     } catch (error) {
         console.error(`******** FAILED to connect to Fabric network: ${error}`);

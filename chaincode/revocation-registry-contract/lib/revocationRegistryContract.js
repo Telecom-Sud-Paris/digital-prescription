@@ -11,7 +11,19 @@ class RevocationRegistryContract extends Contract {
     }
 
     async initLedger(ctx) {
-    }
+            const entries = [
+                new RevocationRegistryEntry("urn:uuid:54321",'did:doctor:123456','did:web:gov.example.country',"HealthcareProfessionalCredential","2026-12-31","hash2424"),
+                new RevocationRegistryEntry("urn:uuid:54321",'did:patient:1234567890abcdef','did:web:gov.example.country',"PatientIdentityCredential","2026-12-31","hash789"),
+            ];
+            
+            for (const entry of entries) {
+                entry.registeredAt = new Date(ctx.stub.getTxTimestamp().seconds.low * 1000).toISOString();
+                const buffer = ContractUtils.objToBuffer(entry);
+                await ctx.stub.putState(entry.did, buffer);
+            }
+            console.info(`Revocation Registry\n ${entries}`);
+        }
+        
 
     async registerCredential(ctx, id, subject, issuer, credentialType, expirationDate, credentialHash) {
         const exists = await this.credentialExists(ctx, id);
@@ -25,7 +37,7 @@ class RevocationRegistryContract extends Contract {
         await ctx.stub.putState(id, buffer);
       
         ctx.stub.setEvent('CredentialRegistered', Buffer.from(JSON.stringify(entry)));
-        console.log(`New Credential anchored: ${id} of type ${credentialType}`);
+        console.info(`New Credential anchored: ${id} of type ${credentialType}`);
         
         return JSON.stringify(entry);
     }
@@ -47,7 +59,7 @@ class RevocationRegistryContract extends Contract {
                 }
             }
 
-            console.log(`Credential ${id} successfully validated as Active.`);
+            console.info(`Credential ${id} successfully validated as Active.`);
             return Buffer.from('true'); 
         } catch (err) {
             throw new Error(err.message);
@@ -70,7 +82,7 @@ class RevocationRegistryContract extends Contract {
         
         await ctx.stub.putState(id, ContractUtils.objToBuffer(entry));
         ctx.stub.setEvent('CredentialRevoked', Buffer.from(JSON.stringify(entry)));
-        console.log(`Credential ${id} has been revoked. Reason: ${entry.revocationReason}`);
+        console.info(`Credential ${id} has been revoked. Reason: ${entry.revocationReason}`);
         return JSON.stringify(entry);
     }
 
@@ -103,7 +115,7 @@ class RevocationRegistryContract extends Contract {
                 try {
                     record = JSON.parse(strValue);
                 } catch (err) {
-                    console.log(err);
+                    console.info(err);
                     record = strValue;
                 }
                 if (record.docType === 'revocation-registry-entry') {

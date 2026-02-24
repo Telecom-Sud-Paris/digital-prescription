@@ -50,21 +50,28 @@ async function main() {
         contract = network.getContract(chaincodeName);
         
         console.log('Fabric connection successful. Contract object is ready.');
-        /*
+        
         const check = await contract.submitTransaction('createPrescription',
-        "urn:uuid:58137357-1941-4c54-8c8d-3f5f3e7b1652", // id
-        'doctordid',                                     // issuerDID
+        "urn:uuid:125", // id
+        'did:doctor:1234567890abcdef',                                     // issuerDID
         '3',                                             // refillCounter
         '2027-01-14T12:00:00Z'                           // validityPeriod
         );
         console.log(`${check.toString()}`);
-        */
+        
+
 
 
         const precription = await contract.evaluateTransaction("queryAllPrescriptions");
         console.log(`${prettyJSONString(precription.toString())}`);
 
         
+        // const dispense = await contract.submitTransaction('dispensePrescription', 
+        //     "urn:uuid:125", 
+        //     "urn:uuid:98765",
+        //     ""
+        // );
+        console.log(`${dispense.toString()}`);
 
     } catch (error) {
         console.error(`******** FAILED to connect to Fabric network: ${error}`);
