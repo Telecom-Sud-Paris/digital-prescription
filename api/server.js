@@ -1,5 +1,5 @@
 'use strict';
-
+const setupRoutes = require('./routes/routes.js');
 const express = require('express');
 const cors = require('cors');
 const { Gateway, Wallets } = require('fabric-network');
@@ -46,6 +46,13 @@ async function initFabricConnection() {
         trustedIssuerContract = network.getContract('trusted-issuer');
         
         console.log('connection established');
+        
+        setupRoutes(app, { 
+            prescriptionContract, 
+            revocationRegistryContract, 
+            trustedIssuerContract 
+        });
+
     } catch (error) {
         console.error(`fail: ${error}`);
         process.exit(1);

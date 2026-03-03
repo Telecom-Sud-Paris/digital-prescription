@@ -112,7 +112,6 @@ class PrescriptionContract extends Contract {
         const allResults = [];
         const iterator = await ctx.stub.getStateByRange(startKey, endKey);
         let result = await iterator.next();
-        
         while (!result.done) {
             const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
             let record;
@@ -125,7 +124,6 @@ class PrescriptionContract extends Contract {
             if (record.docType === 'prescription') {
                 allResults.push({ Key: result.value.key, Record: record });
             }
-      
             result = await iterator.next();
         }
         return JSON.stringify(allResults);
@@ -196,7 +194,6 @@ class PrescriptionContract extends Contract {
             updatedBy: pharmacyDID
         };
         ctx.stub.setEvent('PrescriptionDispensed', Buffer.from(JSON.stringify(eventPayload)));
-
         return JSON.stringify(prescription);
     }
 
