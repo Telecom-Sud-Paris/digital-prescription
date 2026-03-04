@@ -2,12 +2,12 @@ import { Gateway, Wallets, type Contract } from 'fabric-network';
 import FabricCAServices from 'fabric-ca-client';
 import path from 'path';
 
-import { buildCAClient, registerAndEnrollUser, enrollAdmin } from './CAUtil'; 
-import { buildCCPOrg1, buildWallet } from './AppUtil'; 
+import { buildCAClient, registerAndEnrollUser, enrollAdmin } from '#test-application/CAUtil.js'; 
+import { buildCCPOrg1, buildWallet } from '#test-application/AppUtil.js';
 
 const channelName = 'mychannel';
 const mspOrg1 = 'Org1MSP';
-const org1UserId = 'server-user';
+const org1UserId = 'nuxt-user';
 
 export let prescriptionContract: Contract;
 export let revocationRegistryContract: Contract;
