@@ -167,6 +167,7 @@ class PrescriptionContract extends Contract {
      * run by pharmacy. Dispense and link to physical product
      */
     async dispensePrescription(ctx, id, pharmacyDID, productLinkID) {
+        await this.verifyRoleInRegistry(ctx, pharmacyDID, 'pharmacy');
         await this.prescriptionIsValid(ctx, id);
         
         const prescription = await this.getPrescriptionHelper(ctx, id);
