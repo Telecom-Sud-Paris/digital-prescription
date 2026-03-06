@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-    <h1 class="text-4xl font-bold text-gray-900 mb-8">Plataforma Nacional de Saúde (SSI)</h1>
+    <h1 class="text-4xl font-bold text-gray-900 mb-8">SSI Health</h1>
     
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
       <NuxtLink to="/government" class="p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow border-t-4 border-blue-600">

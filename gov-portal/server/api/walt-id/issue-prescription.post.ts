@@ -1,0 +1,69 @@
+// server/api/issue-vc.post.ts
+import { randomUUID } from 'crypto'
+
+const DOCTOR_DID = "did:jwk:eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiRE9DVE9SX0tFWV9JRDAxIiwieCI6IlpYQzFRV0VSQVNERlpYQzFRV0VSQVNERlFRIn0" // DID fictício para o MVP
+const DOCTOR_JWK = {
+  type: "jwk",
+  jwk: {
+    kty: "OKP",
+    d: "JvJIpga2GD8LJeRu4Sv-mL4thE31DuFlr9PA04CIoZY", 
+    crv: "Ed25519",
+    kid: "DOCTOR_KEY_ID01",
+    x: "FZdvwC8aGhRwqzWptej0NZgtwYAI1SyFg1mKDETOfqE"
+  }
+}
+
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event)
+  const { doctorDid, patientDid, medication, refills, expirationDate } = body
+  const vcId = `urn:uuid:${randomUUID()}`
+  const issueDate = new Date().toISOString()
+  const credentialData = {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    "id": vcId,
+    "type": ["VerifiableCredential", "PrescriptionCredential"],
+    "issuer": { "id": doctorDid }, // Usa o DID do médico que "logou"
+    "issuanceDate": issueDate,
+    "credentialSubject": {
+      "id": patientDid,
+      "resourceType": "MedicationRequest",
+      "status": "active",
+      "intent": "order",
+      "medication": { "concept": { "text": medication } },
+      "requester": { "reference": doctorDid },
+      "dispenseRequest": {
+        "validityPeriod": { "end": expirationDate },
+        "numberOfRepeatsAllowed": Number(refills),
+        "quantity": { "value": 1, "unit": "package" }
+      }
+    }
+  }
+  console.log(`[Issue VC] Payload:`, credentialData)
+
+  const config = useRuntimeConfig()
+  const NGROK_URL = config.NGROK_URL
+  const webhookUrl = `${NGROK_URL}/api/webhooks/waltid`
+  let offerUrl = ''
+  try {
+    const waltResponse = await $fetch('https://issuer.demo.walt.id/openid4vc/jwt/issue', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'statusCallbackUri': webhookUrl 
+      },
+      body: {
+        issuerKey: DOCTOR_JWK,
+        issuerDid: DOCTOR_DID,
+        credentialConfigurationId: "VerifiableId_jwt_vc_json", 
+        credentialData: credentialData,
+        authenticationMethod: "PRE_AUTHORIZED",
+        standardVersion: "DRAFT13"
+      }
+    })
+    offerUrl = waltResponse as string
+  } catch (error: any) {
+    throw createError({ statusCode: 500, statusMessage: `walt.id fail: ${error.message}` })
+  }
+
+  return { vcId, offerUrl }
+})
