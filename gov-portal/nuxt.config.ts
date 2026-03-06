@@ -9,6 +9,9 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ],
+    server: {
+      allowedHosts: true
+    }
   },
   alias: {
     '#test-application': resolve(__dirname, '../test-application/javascript')
@@ -19,5 +22,8 @@ export default defineNuxtConfig({
         resolve(__dirname, '../test-application/javascript')
       ]
     }
-  }
+  },
+  runtimeConfig: {
+    NGROK_URL: process.env.NGROK_URL
+  },
 });
