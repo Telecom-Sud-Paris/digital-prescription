@@ -83,6 +83,7 @@ class PrescriptionContract extends Contract {
         const prescription = await this.getPrescriptionHelper(ctx, id);
         console.info(`Prescription ${id} status: ${prescription.status}, refills: ${prescription.refillCounter}`);
         
+        await this.verifyRevocation(ctx, id);
         const isActive = (prescription.status === 'active');
         if (!isActive) {
             throw new Error(`Prescription ${id} is not active. Current status: ${prescription.status}`);
@@ -92,8 +93,6 @@ class PrescriptionContract extends Contract {
         if (!hasRefills) {
             throw new Error(`Prescription ${id} has no refills left.`);
         }
-    
-        await this.verifyRevocation(ctx, id);
         return true; 
     }
 
@@ -166,9 +165,10 @@ class PrescriptionContract extends Contract {
      * prescriptionDispense
      * run by pharmacy. Dispense and link to physical product
      */
-    async dispensePrescription(ctx, id, pharmacyDID, productLinkID) {
-        await this.verifyRoleInRegistry(ctx, pharmacyDID, 'pharmacy');
+    async dispensePrescription(ctx, id, issuerDID, pharmacyDID, productLinkID) {
         await this.prescriptionIsValid(ctx, id);
+        await this.verifyRoleInRegistry(ctx, issuerDID, 'doctor');
+        await this.verifyRoleInRegistry(ctx, pharmacyDID, 'pharmacy');
         
         const prescription = await this.getPrescriptionHelper(ctx, id);
        
