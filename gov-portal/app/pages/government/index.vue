@@ -77,7 +77,6 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
 import QRCode from 'qrcode'
 
 const { isLoading, offerUrl, generatedVcId, errorMessage, issue, reset } = useCredentialIssuer()
@@ -110,6 +109,7 @@ watch(offerUrl, async (newUrl) => {
 })
 
 const handleIssue = async () => {
+  console.log('Issuing credential with form data:', form.value)
   await issue({ ...form.value })
 }
 

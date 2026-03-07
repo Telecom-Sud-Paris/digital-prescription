@@ -136,7 +136,7 @@ const handleSearch = async () => {
 }
 
 const handleDispense = async () => {
-  await dispense(prescription.value.id, pharmacyDid.value, productLink.value.trim())
+  await dispense(prescription.value.id, prescription.value.issuerDID, pharmacyDid.value, productLink.value.trim())
   productLink.value = ''
 }
 </script>

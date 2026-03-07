@@ -1,11 +1,12 @@
 export default defineEventHandler(async (event) => {
     try {
         const body = await readBody(event);
-        const { id, pharmacyDID, productLinkID } = body;
-
+        const { id, issuerDID, pharmacyDID, productLinkID } = body;
+        //console.log(`[/blockchain/prescription/dispense] Request received for prescription ID: ${id}, issuerDID: ${issuerDID}, pharmacyDID: ${pharmacyDID}, productLinkID: ${productLinkID}`);
         const result = await prescriptionContract.submitTransaction(
             'dispensePrescription', 
             id, 
+            issuerDID,
             pharmacyDID, 
             productLinkID
         );
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
             data: JSON.parse(result.toString())
         };
     } catch (error: any) {
-        console.error(`Error in /prescriptions/dispense: ${error}`);
+        console.error(`Error in /prescription/dispense: ${error}`);
         throw createError({ statusCode: 500, statusMessage: error.message });
     }
 });

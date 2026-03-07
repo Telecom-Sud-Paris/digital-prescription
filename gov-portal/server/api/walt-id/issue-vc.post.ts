@@ -16,6 +16,7 @@ const GOV_JWK = {
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { subjectDid, credentialType, name } = body
+  console.log(`[Issue VC] Request received for subjectDid: ${subjectDid}, credentialType: ${credentialType}, name: ${name}`)
 
   const vcId = `urn:uuid:${randomUUID()}`
   const issueDate = new Date().toISOString()

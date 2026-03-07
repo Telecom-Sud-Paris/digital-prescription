@@ -1,4 +1,3 @@
-import { ref } from 'vue'
 
 export function usePharmacy() {
   const isLoading = ref(false)
@@ -6,13 +5,11 @@ export function usePharmacy() {
   const prescription = ref<any>(null)
   const dispenseSuccess = ref(false)
 
-  // Consulta o estado atual da prescrição na blockchain
   const getPrescription = async (id: string) => {
     isLoading.value = true
     errorMessage.value = ''
     prescription.value = null
     dispenseSuccess.value = false
-
     try {
       const data = await $fetch(`/api/blockchain/prescription/${id}`)
       prescription.value = data
@@ -24,15 +21,14 @@ export function usePharmacy() {
     }
   }
 
-  // Executa o chaincode para gastar um refil e atrelar ao produto físico
-  const dispense = async (id: string, pharmacyDID: string, productLinkID: string) => {
+  const dispense = async (id: string, issuerDID: string, pharmacyDID: string, productLinkID: string) => {
     isLoading.value = true
     errorMessage.value = ''
-
+    console.log(`Dispensing prescription. ID: ${id}, issuerDID: ${issuerDID}, pharmacyDID: ${pharmacyDID}, productLinkID: ${productLinkID}`)
     try {
       await $fetch('/api/blockchain/prescription/dispense', {
         method: 'POST',
-        body: { id, pharmacyDID, productLinkID }
+        body: { id, issuerDID, pharmacyDID, productLinkID }
       })
       
       await getPrescription(id)

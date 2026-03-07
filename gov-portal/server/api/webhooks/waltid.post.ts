@@ -16,6 +16,23 @@ export default defineEventHandler(async (event) => {
 
       const credentialType = vc.type.find((t: string) => t !== 'VerifiableCredential')
 
+      if (credentialType === 'PrescriptionCredential') {
+        const dispenseReq = vc.credentialSubject?.dispenseRequest || {}
+        const refills = dispenseReq.numberOfRepeatsAllowed || 0
+        const expDate = dispenseReq.validityPeriod?.end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+        await $fetch('http://localhost:3000/api/blockchain/prescription/register', {
+          method: 'POST',
+          body: {
+            id: vcId,
+            issuerDID: issuerDid,
+            refillCounter: refills,
+            expirationDate: expDate
+          }
+        })
+        console.log(`[Webhook] Prescription ${vcId} registered on-chain. Refills: ${refills}, issued by ${issuerDid}`)
+      }
+      
       console.log(`[Webhook] Anchoring VC ${vcId} (${credentialType}) for ${subjectDid} issued by ${issuerDid}`)
       // anchor credential in the Revocation Registry
       await $fetch('/api/blockchain/revocation-registry/register', {
@@ -45,22 +62,7 @@ export default defineEventHandler(async (event) => {
         console.log(`[Webhook] role ${role} granted to ${subjectDid} in the Trust Registry.`)
       }
 
-      if (credentialType === 'PrescriptionCredential') {
-        const dispenseReq = vc.credentialSubject?.dispenseRequest || {}
-        const refills = dispenseReq.numberOfRepeatsAllowed || 0
-        const expDate = dispenseReq.validityPeriod?.end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-
-        await $fetch('http://localhost:3000/api/blockchain/prescription/register', {
-          method: 'POST',
-          body: {
-            id: vcId,
-            issuerDID: issuerDid,
-            refillCounter: refills,
-            expirationDate: expDate
-          }
-        })
-        console.log(`[Webhook] Prescription ${vcId} registered on-chain. Refills: ${refills}, issued by ${issuerDid}`)
-      }
+      
 
      
 
