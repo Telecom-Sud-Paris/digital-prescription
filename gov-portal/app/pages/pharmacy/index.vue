@@ -11,10 +11,15 @@
 
       <div v-if="!isLoggedIn" class="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
         <h3 class="text-lg font-medium text-slate-900 mb-4">Dispenser Access</h3>
+        <p class="text-sm text-slate-500 mb-6">Insert your DID to access the system.</p>
+        <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
+          <h3 class="text-sm font-medium text-red-800">Authentication Error</h3>
+          <div class="mt-2 text-sm text-red-700">{{ errorMessage }}</div>
+        </div>
         <form @submit.prevent="login">
           <label class="block text-sm font-medium text-slate-700 mb-1">Your DID (Authorized Pharmacy)</label>
           <input v-model="pharmacyDid" type="text" placeholder="did:key:..." required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2.5 border bg-slate-50 mb-6" />
-          <Button type="submit">Authenticate</Button>
+          <Button type="submit" :loading="isLoggingIn">Authenticate</Button>.
         </form>
       </div>
 
@@ -126,8 +131,22 @@ const isLoggedIn = ref(false)
 const pharmacyDid = ref('')
 const searchId = ref('')
 const productLink = ref('')
-const login = () => {
-  if(pharmacyDid.value.trim() !== '') isLoggedIn.value = true
+const isLoggingIn = ref(false)
+
+const login = async () => {
+  if (pharmacyDid.value.trim() === '') return
+  isLoggingIn.value = true
+  errorMessage.value = ''
+  try {
+    await $fetch(`/api/blockchain/trust-registry/${encodeURIComponent(pharmacyDid.value)}/validate`, {
+      params: { role: 'pharmacy' }
+    })
+    isLoggedIn.value = true
+  } catch (e) {
+    errorMessage.value = e.data?.statusMessage || 'Access Denied: Invalid DID or missing Pharmacy credentials.'
+  } finally {
+    isLoggingIn.value = false
+  }
 }
 
 const handleSearch = async () => {

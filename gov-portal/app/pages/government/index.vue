@@ -44,31 +44,48 @@
 
       <Modal :isOpen="!!offerUrl" @close="resetFormAndModal">
         <div class="text-center">
-          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-teal-100 mb-4">
-            <svg class="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h3 class="text-lg leading-6 font-medium text-slate-900">Credential Offer</h3>
-          <p class="text-xs text-slate-500 mt-1">Predicted ID: {{ generatedVcId }}</p>
           
-          <div class="mt-6 flex justify-center">
-            <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="QR Code credential" class="border border-slate-200 rounded-lg p-2 bg-white shadow-sm" />
-            <div v-else class="animate-pulse bg-slate-200 w-[200px] h-[200px] rounded-lg"></div>
+          <div v-if="!isIssued">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-teal-100 mb-4">
+              <svg class="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-slate-900">Credential Offer</h3>
+            <p class="text-xs text-slate-500 mt-1">Scan the QR code to add the credential to your wallet.</p>
+            
+            <div class="mt-6 flex justify-center">
+              <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="QR Code credential" class="border border-slate-200 rounded-lg p-2 bg-white shadow-sm" />
+              <div v-else class="animate-pulse bg-slate-200 w-[200px] h-[200px] rounded-lg"></div>
+            </div>
+            
+            <div class="bg-slate-50 p-3 mt-4 border border-slate-200 rounded break-all text-xs text-slate-700 font-mono select-all text-left max-h-32 overflow-y-auto">
+              {{ offerUrl }}
+            </div>
+            
+            <div class="mt-6">
+              <a :href="offerUrl" target="_blank" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-teal-600 text-base font-medium text-white hover:bg-teal-700 focus:outline-none sm:text-sm">
+                Open Web Wallet
+              </a>
+            </div>
           </div>
-          
-          <div class="bg-slate-50 p-3 mt-4 border border-slate-200 rounded break-all text-xs text-slate-700 font-mono select-all text-left max-h-32 overflow-y-auto">
-            {{ offerUrl }}
+
+          <div v-else>
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+              <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 class="text-xl leading-6 font-bold text-slate-900">Success!</h3>
+            <p class="text-sm text-slate-600 mt-2">The credential was successfully added to the wallet and anchored on the blockchain.</p>
           </div>
           
           <div class="mt-6">
-            <a :href="offerUrl" target="_blank" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-teal-600 text-base font-medium text-white hover:bg-teal-700 focus:outline-none sm:text-sm">
-              Open Web Wallet
-            </a>
-            <button @click="resetFormAndModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 focus:outline-none sm:text-sm">
-              Close
+            <button @click="resetFormAndModal" class="w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 focus:outline-none sm:text-sm">
+              {{ isIssued ? 'Create New Credential' : 'Cancel' }}
             </button>
           </div>
+
         </div>
       </Modal>
 
@@ -82,6 +99,9 @@ import QRCode from 'qrcode'
 const { isLoading, offerUrl, generatedVcId, errorMessage, issue, reset } = useCredentialIssuer()
 const qrCodeDataUrl = ref('')
 
+const isIssued = ref(false)
+let pollInterval = null
+
 const form = ref({
   credentialType: '',
   subjectDid: '',
@@ -94,10 +114,7 @@ watch(offerUrl, async (newUrl) => {
       qrCodeDataUrl.value = await QRCode.toDataURL(newUrl, { 
         width: 200, 
         margin: 2,
-        color: {
-          dark: '#0f172a', 
-          light: '#ffffff'
-        }
+        color: { dark: '#0f172a', light: '#ffffff' }
       })
     } catch (err) {
       console.error('error generating qrcode locally:', err)
@@ -108,6 +125,26 @@ watch(offerUrl, async (newUrl) => {
   }
 })
 
+watch(generatedVcId, (newId) => {
+  if (newId) {
+    pollInterval = setInterval(async () => {
+      try {
+        await $fetch(`/api/blockchain/revocation-registry/${newId}`)
+        isIssued.value = true
+        clearInterval(pollInterval)
+      } catch (e) {
+      }
+    }, 3000)
+  } else {
+    clearInterval(pollInterval)
+    isIssued.value = false
+  }
+})
+
+onUnmounted(() => {
+  if (pollInterval) clearInterval(pollInterval)
+})
+
 const handleIssue = async () => {
   console.log('Issuing credential with form data:', form.value)
   await issue({ ...form.value })
@@ -115,6 +152,8 @@ const handleIssue = async () => {
 
 const resetFormAndModal = () => {
   reset() 
+  if (pollInterval) clearInterval(pollInterval)
+  isIssued.value = false
   form.value.credentialType = ''
   form.value.subjectDid = ''
   form.value.name = ''

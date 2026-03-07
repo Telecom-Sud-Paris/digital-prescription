@@ -17,17 +17,22 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { subjectDid, credentialType, name } = body
   console.log(`[Issue VC] Request received for subjectDid: ${subjectDid}, credentialType: ${credentialType}, name: ${name}`)
-
+  const resourceType = credentialType === 'PatientIdentityCredential' ? 'Patient' : credentialType === 'HealthcareProfessionalCredential' ? 'Practitioner' : credentialType === 'AuthorizedDispenserCredential' ? 'HealthcareService' : 'Unknown'
   const vcId = `urn:uuid:${randomUUID()}`
   const issueDate = new Date().toISOString()
   const expirationDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
   const credentialData: any = {
     "@context": ["https://www.w3.org/2018/credentials/v1"],
-    "id": vcId,
     "type": ["VerifiableCredential", credentialType],
-    "issuer": { "id": GOV_DID },
+    "id": vcId,
+    "issuer": { "id": GOV_DID, "name": "National Government" },
+    "credentialSubject": { 
+      "resourceType": resourceType,
+      "active": true,
+      "id": subjectDid, 
+      "name": name 
+    },
     "issuanceDate": issueDate,
-    "credentialSubject": { "id": subjectDid, "name": name },
     "expirationDate": expirationDate
   }
   console.log(`[Issue VC] Payload:`, credentialData)

@@ -22,8 +22,7 @@ export default defineEventHandler(async (event) => {
     "@context": ["https://www.w3.org/2018/credentials/v1"],
     "id": vcId,
     "type": ["VerifiableCredential", "PrescriptionCredential"],
-    "issuer": { "id": doctorDid }, // Usa o DID do médico que "logou"
-    "issuanceDate": issueDate,
+    "issuer": { "id": doctorDid }, 
     "credentialSubject": {
       "id": patientDid,
       "resourceType": "MedicationRequest",
@@ -36,7 +35,9 @@ export default defineEventHandler(async (event) => {
         "numberOfRepeatsAllowed": Number(refills),
         "quantity": { "value": 1, "unit": "package" }
       }
-    }
+    },
+    "issuanceDate": issueDate,
+    "expirationDate": expirationDate
   }
   console.log(`[Issue VC] Payload:`, credentialData)
 
