@@ -64,7 +64,6 @@
 
       <Modal :isOpen="!!offerUrl" @close="resetFormAndModal">
         <div class="text-center">
-          
           <div v-if="!isIssued">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-teal-100 mb-4">
               <svg class="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -73,7 +72,6 @@
             </div>
             <h3 class="text-lg leading-6 font-medium text-slate-900">Credential Offer</h3>
             <p class="text-xs text-slate-500 mt-1">Scan the QR code to add the prescription to your wallet.</p>
-            
             <div class="mt-6 flex justify-center">
               <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="QR Code" class="border border-slate-200 rounded-lg p-2 bg-white shadow-sm" />
               <div v-else class="animate-pulse bg-slate-200 w-[200px] h-[200px] rounded-lg"></div>
@@ -87,7 +85,6 @@
               </a>
             </div>
           </div>
-
           <div v-else>
             <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
               <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -97,16 +94,13 @@
             <h3 class="text-xl leading-6 font-bold text-slate-900">Success!</h3>
             <p class="text-sm text-slate-600 mt-2">The prescription was successfully added to the patient's wallet and recorded on the blockchain.</p>
           </div>
-
           <div class="mt-6">
             <button @click="resetFormAndModal" class="w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 focus:outline-none sm:text-sm">
               {{ isIssued ? 'Create New Prescription' : 'Cancel' }}
             </button>
           </div>
-
         </div>
       </Modal>
-
     </div>
   </div>
 </template>

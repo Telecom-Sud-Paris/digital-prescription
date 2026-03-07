@@ -98,7 +98,6 @@ import QRCode from 'qrcode'
 
 const { isLoading, offerUrl, generatedVcId, errorMessage, issue, reset } = useCredentialIssuer()
 const qrCodeDataUrl = ref('')
-
 const isIssued = ref(false)
 let pollInterval = null
 
