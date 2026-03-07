@@ -1,0 +1,180 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://www.hl7.org/fhir/medicationrequest.html"
+  ],
+  "id": {
+    "dataType": "string",
+    "value": "urn:uuid:62148468-2052-5d65-9d9e-4a6f4e8c2763",
+    "description": "Unique identifier for this credential"
+  },
+  "type": [
+    "VerifiableCredential",
+    "MedicationRequestCredential"
+  ],
+  "issuer": {
+    "dataType": "string",
+    "value": "did:web:hospital.example.org",
+    "description": "The issuer DID"
+  },
+  "issuanceDate": {
+    "dataType": "datetime",
+    "example": "YYYY-MM-DD",
+    "description": "Date of issuance"
+  },
+  "credentialSubject": {
+    "resourceType": "MedicationRequest",
+    "status": {
+      "dataType": "string",
+      "example": "active|stopped|completed|draft",
+      "description": "The status of the request"
+    },
+    "intent": {
+      "dataType": "string",
+      "example": "order|plan|proposal",
+      "description": "Intent of the request"
+    },
+    "priority": {
+      "dataType": "string",
+      "example": "routine|urgent|asap|stat",
+      "description": "Urgency"
+    },
+    "doNotPerform": {
+      "dataType": "boolean",
+      "example": "false",
+      "description": "If true, patient should NOT take this"
+    },
+    "medication": {
+      "description": "Details of the medication",
+      "concept": {
+        "coding": {
+          "system": {
+            "example": "http://snomed.info/sct",
+            "description": "Code system"
+          },
+          "code": {
+            "example": "374664000",
+            "description": "Medication code"
+          },
+          "display": {
+            "example": "Amoxicillin 500mg capsule",
+            "description": "Medication name"
+          }
+        }
+      }
+    },
+    "subject": {
+      "description": "The patient",
+      "reference": {
+        "example": "did:web:patient.example.org:123456789",
+        "description": "Patient DID"
+      },
+      "display": {
+        "example": "John Doe",
+        "description": "Patient Name"
+      }
+    },
+    "authoredOn": {
+      "dataType": "datetime",
+      "example": "YYYY-MM-DD",
+      "description": "Date written"
+    },
+    "requester": {
+      "description": "Who ordered",
+      "reference": {
+        "example": "Practitioner/456",
+        "description": "Doctor ID"
+      },
+      "display": {
+        "example": "Dr. Alice Smith"
+      }
+    },
+    "reason": {
+      "description": "Reason for medication",
+      "concept": {
+        "example": "Acute Bacterial Sinusitis",
+        "description": "Clinical indication"
+      }
+    },
+    "dosageInstruction": {
+      "multiple": true,
+      "description": "Instructions",
+      "instruction": {
+        "dataType": "string",
+        "example": "Take 1 capsule every 8 hours",
+        "description": "Full text instructions"
+      },
+      "timing": {
+        "repeat": {
+          "frequency": {
+            "dataType": "string",
+            "example": "3",
+            "description": "Times per period"
+          },
+          "period": {
+            "dataType": "string",
+            "example": "1",
+            "description": "Period length"
+          },
+          "periodUnit": {
+            "example": "d|h|wk",
+            "description": "Unit (d=day)"
+          }
+        }
+      },
+      "route": {
+        "coding": {
+          "display": {
+            "example": "Oral",
+            "description": "Route"
+          }
+        }
+      }
+    },
+    "dispenseRequest": {
+      "description": "Supply authorization",
+      "numberOfRepeatsAllowed": {
+        "example": "0",
+        "description": "Refills"
+      },
+      "quantity": {
+        "value": {
+          "example": "21",
+          "description": "Amount"
+        },
+        "unit": {
+          "example": "capsule",
+          "description": "Unit"
+        }
+      },
+      "validityPeriod": {
+        "start": {
+          "dataType": "datetime",
+          "example": "YYYY-MM-DD",
+          "description": "Valid from"
+        },
+        "end": {
+          "dataType": "datetime",
+          "example": "YYYY-MM-DD",
+          "description": "Valid until"
+        }
+      }
+    },
+    "substitution": {
+      "description": "Generic substitution",
+      "allowed": {
+        "dataType": "boolean",
+        "example": "true",
+        "description": "Allowed?"
+      },
+      "reason": {
+        "coding": {
+          "display": {
+            "example": "Formulary policy",
+            "description": "Reason"
+          }
+        }
+      }
+    }
+  }
+}

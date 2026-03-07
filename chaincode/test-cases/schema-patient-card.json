@@ -1,0 +1,291 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://www.hl7.org/fhir/patient.html"
+  ],
+  "id": {
+    "dataType": "string",
+    "value": "urn:uuid:58137357-1941-4c54-8c8d-3f5f3e7b1652",
+    "description": "The unique identifier for the credential"
+  },
+  "type": [
+    "VerifiableCredential",
+    "PatientCredential"
+  ],
+  "issuer": {
+    "dataType": "string",
+    "value": "did:web:gov.example.health",
+    "description": "The issuer DID of the credential"
+  },
+  "issuanceDate": {
+    "dataType": "datetime",
+    "example": "YYYY-MM-DD",
+    "description": "The issuance date of the credential"
+  },
+  "credentialSubject": {
+    "resourceType": "Patient",
+    "identifier": 
+      {
+        "use": {
+          "dataType": "string",
+          "example": "official|temp|secondary",
+          "description": "The use of the identifier"
+        },
+        "type": {
+          "coding": 
+            {
+              "system": {  "dataType": "string", "example": "http://terminology.hl7.org/CodeSystem/v2-0203" },
+              "code": {  "dataType": "string", "example": "SB" },
+              "display": {  "example": "Social Beneficiary Identifier" }
+            }
+        },
+        "system": {
+          
+          "example": "http://hospital.smart.org/identifiers"
+        },
+        "value": {
+          
+          "example": "123456789"
+        }
+      },
+    "active": {
+      "dataType": "boolean",
+      "example": "true",
+      "description": "Whether the patient is active"
+    },
+    "name": 
+      {
+        "multiple": true,
+        "use": {
+          "example": "official|usual|maiden",
+          "description": "The use of the name"
+        },
+        "family": {
+          "example": "Doe",
+          "description": "The family name of the patient"
+        },
+        "given": 
+          {
+            "example": "John",
+            "description": "The given name of the patient"
+          },
+        "prefix": 
+          {
+            "example": "Mr.",
+            "description": "The prefix of the name"
+          },
+        "description": "The full name details of the patient. Multiple names can be provided."
+      },
+    "telecom": 
+      {
+        "multiple": true,
+        "system": {
+          
+          "example": "phone|fax|email|url",
+          "description": "The system of the telecom contact"
+        },
+        "value": {
+          
+          "example": "+1-555-010-9999",
+          "description": "The value of the telecom contact"
+        },
+        "use": {
+          
+          "example": "home|work|mobile",
+          "description": "The use of the telecom contact"
+        },
+        "rank": {
+          "dataType": "Integer",
+          "example": "1",
+          "description": "The rank of the telecom contact"
+        },
+        "description": "The telecom contact details for the patient. Multiple contacts can be provided."
+      },
+    "gender": {
+      "dataType": "string",
+      "example": "male|female|other|unknown",
+      "description": "The gender of the patient"
+    },
+    "birthDate": {
+      "dataType": "datetime",
+      "example": "YYYY-MM-DD",
+      "description": "The birth date of the patient"
+    },
+    "deceasedBoolean": {
+      "dataType": "boolean",
+      "example": "false",
+      "description": "Whether the patient is deceased"
+    },
+    "deceasedDateTime": {
+      "condition": "deceasedBoolean==true",
+      "dataType": "datetime",
+      "example": "YYYY-MM-DD",
+      "description": "The date and time when the patient is deceased"
+    },
+    "address": 
+      {
+        "multiple": true,
+        "description": "The address details for the patient. Multiple addresses can be provided.",
+        "use": {
+          "example": "home|work|temporary|old",
+          "description": "The use of the address"
+        },
+        "type": {
+          "example": "postal|physical|both",
+          "description": "The type of the address"
+        },
+        "line": 
+          {
+            "example": "123 Main St",
+            "description": "The line of the address"
+          },
+        "city": {
+          "example": "Paris",
+          "description": "The city of the address"
+        },
+        "state": {
+          "optional": true,
+          "example": "",
+          "description": "The state or province of the address"
+        },
+        "postalCode": {
+          "example": "10001",
+          "description": "The postal code of the address"
+        },
+        "country": {
+          "example": "FR",
+          "description": "The country of the address"
+        }
+      },
+    "maritalStatus": {
+      "description": "Marital (civil) status of a patient",
+      "coding": 
+        {
+          "system": {
+            "example": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus"
+          },
+          "code": {
+            "example": "M"
+          },
+          "display": {
+            "example": "Married"
+          }
+        },
+      "text": {
+        "example": "Married"
+      },
+    "multipleBirthBoolean": {
+      "dataType": "boolean",
+      "example": "false",
+      "description": "Whether the patient is part of a multiple birth (e.g., twins, triplets)"
+    },
+    "multipleBirthInteger": {
+      "condition": "multipleBirthBoolean==true",
+      "dataType": "Integer",
+      "example": "0",
+      "description": "The order of birth in a multiple birth"
+    },
+    "photo": 
+      {
+        "contentType": {
+          "dataType": "MIME Type",
+          "example": "image/jpeg"
+        },
+        "url": {
+          "dataType": "URL",
+          "example": "https://example.org/photos/john.jpg"
+        },
+        "title": {
+          "example": "Profile Photo"
+        }
+      },
+    "contact": 
+      {
+        "multiple": true,
+        "description": "Contact persons for the patient. Multiple contacts can be provided.",
+        "relationship": 
+          {
+            "coding": 
+              {
+                "system": {  "example": "http://terminology.hl7.org/CodeSystem/v2-0131" },
+                "code": {  "example": "C" }
+              },
+            "text": {  "example": "Emergency Contact" }
+          },
+        "name": {
+          "family": {  "example": "Doe" },
+          "given": {  "example": "Jane" }
+        },
+        "telecom": 
+          {
+            "system": {  "example": "phone" },
+            "value": {  "example": "555-999-9999" }
+          },
+        "address": {
+          "line": {  "example": "456 Other St" },
+          "city": {  "example": "Paris" }
+        },
+        "gender": {
+          "example": "male|female|other|unknown"
+        },
+        "organization": {
+          "reference": {  "example": "Organization/123" },
+          "display": {  "example": "City Hospital" }
+        },
+        "period": {
+          "start": { "dataType": "datetime", "example": "YYYY-MM-DD" },
+          "end": { "dataType": "datetime", "example": "YYYY-MM-DD" }
+        }
+      },
+    "communication": 
+      {
+        "multiple": true,
+        "description": "Languages which may be used to communicate with the patient. Multiple languages can be provided.",
+        "language": {
+          "coding": 
+            {
+              "system": {  "example": "urn:ietf:bcp:47" },
+              "code": {  "example": "en" },
+              "display": {  "example": "English" }
+            }
+        },
+        "preferred": {
+          "dataType": "boolean",
+          "example": "true"
+        }
+      },
+    "generalPractitioner":
+      {
+        "reference": {
+          "example": "Practitioner/example"
+        },
+        "display": {
+          "example": "Dr. Alice Smith"
+        }
+      },
+    "managingOrganization": {
+      "reference": {
+        
+        "example": "Organization/1"
+      },
+      "display": {
+        
+        "example": "Health Department"
+      }
+    },
+    "link": 
+      {
+        "other": {
+          "reference": {
+            
+            "example": "RelatedPerson/peter"
+          }
+        },
+        "type": {
+          
+          "example": "seealso|replaced-by|replaces|refer"
+        }
+      }
+    }
+  }
+}
