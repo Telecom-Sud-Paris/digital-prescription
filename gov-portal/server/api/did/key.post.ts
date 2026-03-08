@@ -1,6 +1,5 @@
 // server/api/did/generate.post.ts
 export default defineEventHandler(async (event) => {
-    console.log("get key")
     const body = await readBody(event);
     const { did } = body
     const login: any = await $fetch("https://wallet.test.waltid.cloud/wallet-api/auth/login",{
@@ -27,14 +26,17 @@ export default defineEventHandler(async (event) => {
         'Authorization': `Bearer ${login.token}` 
       }
     });
-    const jwk = didDocument.verificationMethod[0].publicKeyJwk
-    const type = didDocument.verificationMethod[0].type
-    const keyMaterial={
-        type: type,
-        jwk: jwk
-    }
-    console.log(keyMaterial)
+    const publicKey = didDocument.verificationMethod[0].publicKeyJwk
+    const keyId = publicKey.kid;
+    let privateKey: any = await $fetch(`https://wallet.test.waltid.cloud/wallet-api/wallet/${walletId}/keys/${keyId}/export?format=JWK&loadPrivateKey=true`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${login.token}`
+        }
+    });
+    privateKey=JSON.parse(privateKey)
   return {
-    keyMaterial
+    publicKey, privateKey
   };
 });

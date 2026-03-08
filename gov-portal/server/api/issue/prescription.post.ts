@@ -17,13 +17,24 @@ const DOCTOR_JWK = {
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { doctorDid, patientDid, medication, refills, expirationDate } = body
+  const key = await $fetch<{ privateKey: JsonWebKey }>('/api/did/key', { 
+        method: 'POST', 
+        body: { did: doctorDid } 
+      });
+  const jwk = key.privateKey
+
+  const keyMaterial = {
+    type: "jwk",
+    jwk: jwk 
+  }
+  
   const vcId = `urn:uuid:${randomUUID()}`
   const issueDate = new Date().toISOString()
   const credentialData = {
     "@context": ["https://www.w3.org/2018/credentials/v1"],
     "id": vcId,
     "type": ["VerifiableCredential", "PrescriptionCredential"],
-    "issuer": { "id": DOCTOR_DID }, 
+    "issuer": { "id": doctorDid }, 
     "credentialSubject": {
       "id": patientDid,
       "resourceType": "MedicationRequest",
@@ -40,7 +51,7 @@ export default defineEventHandler(async (event) => {
     "issuanceDate": issueDate,
     "expirationDate": expirationDate
   }
-  console.log(`[Issue VC] Payload:`, credentialData)
+  //console.log(`[Issue VC] Payload:`, credentialData)
 
   const config = useRuntimeConfig()
   const NGROK_URL = config.public.NGROK_URL
@@ -54,8 +65,8 @@ export default defineEventHandler(async (event) => {
         'statusCallbackUri': webhookUrl 
       },
       body: {
-        issuerKey: DOCTOR_JWK,
-        issuerDid: DOCTOR_DID,
+        issuerKey: keyMaterial,
+        issuerDid: doctorDid,
         credentialConfigurationId: "VerifiableId_jwt_vc_json", 
         credentialData: credentialData,
         authenticationMethod: "PRE_AUTHORIZED",

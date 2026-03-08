@@ -83,7 +83,7 @@
               v-if="prescription.status === 'active' && prescription.refillCounter > 0" 
               flat
               :isLoading="isLoading"
-              submitText="Confirme Dispense"
+              submitText="Confirm Dispense"
               @submit="handleDispense"
               class="pt-4 border-t border-slate-100"
             >

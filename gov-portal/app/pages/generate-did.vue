@@ -65,6 +65,7 @@ async function getKey(){
       method: 'POST', 
       body: { did: result.value.did } 
     });
+    key.value=key.value.publicKey
   } finally {
     loading2.value = false;
   }
