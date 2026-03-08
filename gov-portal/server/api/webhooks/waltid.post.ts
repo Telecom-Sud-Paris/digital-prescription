@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
         const refills = dispenseReq.numberOfRepeatsAllowed || 0
         const expDate = dispenseReq.validityPeriod?.end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
-        await $fetch('http://localhost:3000/api/blockchain/prescription/register', {
+        await $fetch('/api/blockchain/prescription/register', {
           method: 'POST',
           body: {
             id: vcId,
@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
 
     } catch (error: any) {
       console.error('[Webhook] fail on chaincode calls:', error)
-      throw createError({ statusCode: 500, statusMessage: 'Blockchain error' })
+      throw createError({ statusCode: 500, statusMessage: error.message })
     }
   } else {
     // Ignora eventos irrelevantes (ex: 'requested_token') silenciosamente

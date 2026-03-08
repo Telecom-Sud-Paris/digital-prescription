@@ -12,10 +12,12 @@
       <div v-if="!isLoggedIn" class="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
         <h3 class="text-lg font-medium text-slate-900 mb-4">Healthcare Professional Access</h3>
         <p class="text-sm text-slate-500 mb-6">Insert your DID to access the system.</p>
+        
         <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
           <h3 class="text-sm font-medium text-red-800">Authentication Error</h3>
           <div class="mt-2 text-sm text-red-700">{{ errorMessage }}</div>
         </div>
+
         <form @submit.prevent="login">
           <label class="block text-sm font-medium text-slate-700 mb-1">Your DID (Doctor)</label>
           <input v-model="doctorDid" type="text" placeholder="did:key:..." required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2.5 border bg-slate-50 mb-6" />
@@ -23,16 +25,48 @@
         </form>
       </div>
 
+      <div v-else-if="!isPatientVerified" class="bg-white p-8 rounded-xl shadow-sm border border-slate-100 text-center">
+        <div class="flex justify-between items-center mb-6 px-2">
+          <span class="text-sm text-slate-600 font-medium">Doctor: <span class="text-teal-700 truncate block max-w-[200px]">{{ doctorDid }}</span></span>
+          <button @click="resetSession" class="text-xs text-red-600 hover:underline">Cancel & Logout</button>
+        </div>
+
+        <h3 class="text-lg font-medium text-slate-900 mb-2">Patient Verification</h3>
+        <p class="text-sm text-slate-500 mb-6">Ask the patient to scan this QR Code to present their PatientCredential.</p>
+
+        <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200 text-left">
+          <h3 class="text-sm font-medium text-red-800">Verification Error</h3>
+          <div class="mt-2 text-sm text-red-700">{{ errorMessage }}</div>
+        </div>
+
+        <div class="mt-6 flex justify-center">
+          <img v-if="verificationQrCode" :src="verificationQrCode" alt="Verification QR Code" class="border border-slate-200 rounded-lg p-2 bg-white shadow-sm" />
+          <div v-else class="animate-pulse bg-slate-200 w-[200px] h-[200px] rounded-lg flex items-center justify-center text-slate-500 text-sm">
+            Generating Request...
+          </div>
+        </div>
+        
+        <div v-if="verificationUrl" class="bg-slate-50 p-3 mt-4 border border-slate-200 rounded break-all text-xs text-slate-700 font-mono select-all text-left max-h-32 overflow-y-auto">
+          {{ verificationUrl }}
+        </div>
+        
+        <p v-if="verificationQrCode" class="text-xs text-slate-400 mt-4 animate-pulse">Waiting for wallet presentation...</p>
+      </div>
+
       <div v-else>
         <div class="flex justify-between items-center mb-6 px-2">
           <span class="text-sm text-slate-600 font-medium">Doctor: <span class="text-teal-700 truncate block max-w-[200px]">{{ doctorDid }}</span></span>
-          <button @click="isLoggedIn = false" class="text-xs text-red-600 hover:underline">Logout</button>
+          <button @click="resetSession" class="text-xs text-red-600 hover:underline">New Patient / Logout</button>
+        </div>
+        
+        <div class="mb-6 p-3 rounded-md bg-green-50 border border-green-200 text-center">
+          <span class="text-sm font-medium text-green-800">✓ Patient identity verified via SSI</span>
         </div>
 
-      <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
+        <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
           <h3 class="text-sm font-medium text-red-800">Error</h3>
           <div class="mt-2 text-sm text-red-700">{{ errorMessage }}</div>
-      </div>
+        </div>
 
         <BaseForm 
           :isLoading="isLoading" 
@@ -41,7 +75,12 @@
         >
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Patient DID</label>
-            <input v-model="form.patientDid" type="text" placeholder="did:key:..." required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2.5 border bg-slate-50" />
+            <input v-model="form.patientDid" type="text" readonly class="block w-full rounded-md border-slate-200 shadow-sm text-slate-500 sm:text-sm p-2.5 border bg-slate-100 cursor-not-allowed" title="Extracted from verified credential" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+            <input v-model="form.name" type="text" readonly class="block w-full rounded-md border-slate-200 shadow-sm text-slate-500 sm:text-sm p-2.5 border bg-slate-100 cursor-not-allowed" title="Extracted from verified credential" />
           </div>
 
           <div>
@@ -107,12 +146,28 @@
 
 <script setup>
 import QRCode from 'qrcode'
+
 const { isLoading, offerUrl, generatedVcId, errorMessage, issuePrescription, reset } = usePrescriptionIssuer()
 const isLoggedIn = ref(false)
 const doctorDid = ref('')
-const isIssued = ref(false) 
 const isLoggingIn = ref(false)
-let pollInterval = null 
+const isPatientVerified = ref(false)
+const verificationUrl = ref('')
+const verificationQrCode = ref('')
+const verificationStateId = ref('')
+let verificationPollInterval = null
+const isIssued = ref(false) 
+let prescriptionPollInterval = null 
+
+const form = ref({
+  patientDid: '',
+  name: '',
+  medication: '',
+  refills: 0,
+  expirationDate: ''
+})
+
+const qrCodeDataUrl = ref('')
 
 const login = async () => {
   if (doctorDid.value.trim() === '') return
@@ -123,22 +178,52 @@ const login = async () => {
       params: { role: 'doctor' }
     })
     isLoggedIn.value = true
+    await startPatientVerification()
+
   } catch (e) {
     errorMessage.value = e.data?.statusMessage || 'Access Denied: Invalid DID or missing Doctor credentials.'
   } finally {
     isLoggingIn.value = false
   }
-
 }
+const config = useRuntimeConfig()
+const startPatientVerification = async () => {
+  errorMessage.value = ''
+  try {
+    const NGROK_URL = config.public.NGROK_URL 
+    console.log("Using NGROK URL:", NGROK_URL)
+    const res = await $fetch('/api/verify/init', {
+      method: 'POST',
+      body: { 
+        credentialType: 'PatientIdentityCredential', 
+        ngrokUrl: NGROK_URL 
+      }
+    })
+    
+    verificationUrl.value = res.url
+    verificationStateId.value = res.stateId
+    verificationQrCode.value = await QRCode.toDataURL(res.url, { width: 200, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } })
 
-const form = ref({
-  patientDid: '',
-  medication: '',
-  refills: 0,
-  expirationDate: ''
-})
+    verificationPollInterval = setInterval(async () => {
+      try {
+        const statusRes = await $fetch(`/api/verify/status?stateId=${verificationStateId.value}`)
+        if (statusRes && statusRes.status === 'success') {
+          clearInterval(verificationPollInterval)
+          const vc=statusRes.data.policyResults.results[1].policyResults[0].result.vc 
+          form.value.name=vc.credentialSubject.name || 'Error extracting name from VC'
+          form.value.patientDid = vc.credentialSubject.id || 'Error extracting DID from VC'
+          isPatientVerified.value = true
+        }
+      } catch (err) {
+        console.error("Error occurred while polling verification status:", err)
+      }
+    }, 2000)
 
-const qrCodeDataUrl = ref('')
+  } catch (e) {
+    errorMessage.value = "Failed to initiate patient verification. Make sure your NGROK URL is correct."
+    console.error(e)
+  }
+}
 
 watch(offerUrl, async (newUrl) => {
   if (newUrl) {
@@ -150,22 +235,18 @@ watch(offerUrl, async (newUrl) => {
 
 watch(generatedVcId, (newId) => {
   if (newId) {
-    pollInterval = setInterval(async () => {
+    prescriptionPollInterval = setInterval(async () => {
       try {
         await $fetch(`/api/blockchain/prescription/${newId}`)
         isIssued.value = true
-        clearInterval(pollInterval)
+        clearInterval(prescriptionPollInterval)
       } catch (e) {
-        }
+      }
     }, 3000)
   } else {
-    clearInterval(pollInterval)
+    clearInterval(prescriptionPollInterval)
     isIssued.value = false
   }
-})
-
-onUnmounted(() => {
-  if (pollInterval) clearInterval(pollInterval)
 })
 
 const handleIssue = async () => {
@@ -177,12 +258,31 @@ const handleIssue = async () => {
   })
 }
 
+const resetSession = () => {
+  isLoggedIn.value = false
+  isPatientVerified.value = false
+  doctorDid.value = ''
+  errorMessage.value = ''
+  form.value.patientDid = ''
+  form.value.name = ''
+  verificationUrl.value = ''
+  verificationQrCode.value = ''
+  
+  if (verificationPollInterval) clearInterval(verificationPollInterval)
+  if (prescriptionPollInterval) clearInterval(prescriptionPollInterval)
+}
+
 const resetFormAndModal = () => {
   reset()
-  if (pollInterval) clearInterval(pollInterval)
+  if (prescriptionPollInterval) clearInterval(prescriptionPollInterval)
   isIssued.value = false
   form.value.medication = ''
   form.value.refills = 0
   form.value.expirationDate = ''
 }
+
+onUnmounted(() => {
+  if (prescriptionPollInterval) clearInterval(prescriptionPollInterval)
+  if (verificationPollInterval) clearInterval(verificationPollInterval)
+})
 </script>

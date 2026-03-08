@@ -24,6 +24,9 @@ export default defineNuxtConfig({
     }
   },
   runtimeConfig: {
-    NGROK_URL: process.env.NGROK_URL
+    public:{
+      NGROK_URL: process.env.NGROK_URL
+    }
+    
   },
 });

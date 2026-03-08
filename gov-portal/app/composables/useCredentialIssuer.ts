@@ -10,7 +10,7 @@ export default function()   {
     errorMessage.value = ''
     
     try {
-      const response = await $fetch('/api/walt-id/issue-vc', {
+      const response = await $fetch('/api/issue/issue-vc', {
         method: 'POST',
         body: payload
       })

@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
   console.log(`[Issue VC] Payload:`, credentialData)
 
   const config = useRuntimeConfig()
-  const NGROK_URL = config.NGROK_URL
+  const NGROK_URL = config.public.NGROK_URL
   const webhookUrl = `${NGROK_URL}/api/webhooks/waltid`
   let offerUrl = ''
   try {
