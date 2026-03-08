@@ -5,157 +5,156 @@
       <div class="text-center mb-10">
         <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Pharmacy Portal</h2>
         <p class="mt-2 text-sm text-slate-600">
-          Verify on-chain prescriptions and make dispense.
+          Verify on-chain prescriptions via SSI and dispense medications.
         </p>
       </div>
 
       <div v-if="!isLoggedIn" class="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
         <h3 class="text-lg font-medium text-slate-900 mb-4">Dispenser Access</h3>
         <p class="text-sm text-slate-500 mb-6">Insert your DID to access the system.</p>
-        <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
+        
+        <div v-if="authError" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
           <h3 class="text-sm font-medium text-red-800">Authentication Error</h3>
-          <div class="mt-2 text-sm text-red-700">{{ errorMessage }}</div>
+          <div class="mt-2 text-sm text-red-700">{{ authError }}</div>
         </div>
+
         <form @submit.prevent="login">
           <label class="block text-sm font-medium text-slate-700 mb-1">Your DID (Authorized Pharmacy)</label>
           <input v-model="pharmacyDid" type="text" placeholder="did:key:..." required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2.5 border bg-slate-50 mb-6" />
-          <Button type="submit" :loading="isLoggingIn">Authenticate</Button>.
+          <Button type="submit" :loading="isLoggingIn">Authenticate</Button>
         </form>
       </div>
 
-      <div v-else>
+      <div v-else-if="!isVerified" class="bg-white p-8 rounded-xl shadow-sm border border-slate-100 text-center">
         <div class="flex justify-between items-center mb-6 px-2">
           <span class="text-sm text-slate-600 font-medium">Pharmacy: <span class="text-teal-700 truncate block max-w-[200px]">{{ pharmacyDid }}</span></span>
-          <button @click="isLoggedIn = false; reset()" class="text-xs text-red-600 hover:underline">Logout</button>
+          <button @click="resetSession" class="text-xs text-red-600 hover:underline">Logout</button>
         </div>
 
-        <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
-          <h3 class="text-sm font-medium text-red-800">error</h3>
-          <div class="mt-2 text-sm text-red-700">{{ errorMessage }}</div>
+        <h3 class="text-lg font-medium text-slate-900 mb-2">Scan Prescription</h3>
+        <p class="text-sm text-slate-500 mb-6">Ask the patient to scan this QR Code to present their MedicationRequestCredential.</p>
+
+        <div v-if="verificationError" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200 text-left">
+          <h3 class="text-sm font-medium text-red-800">Verification Error</h3>
+          <div class="mt-2 text-sm text-red-700">{{ verificationError }}</div>
         </div>
 
-        <div v-if="dispenseSuccess" class="mb-6 p-4 rounded-md bg-green-50 border border-green-200 flex items-center">
-          <svg class="h-6 w-6 text-green-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-          <div>
-            <h3 class="text-sm font-medium text-green-800">Dispense registered on the Blockchain!</h3>
-            <p class="text-xs text-green-700">State was updated on the blockchain.</p>
+        <div class="mt-6 flex justify-center">
+          <img v-if="verificationQrCode" :src="verificationQrCode" alt="Verification QR Code" class="border border-slate-200 rounded-lg p-2 bg-white shadow-sm" />
+          <div v-else class="animate-pulse bg-slate-200 w-[200px] h-[200px] rounded-lg flex items-center justify-center text-slate-500 text-sm">
+            Generating Request...
           </div>
         </div>
+        <div v-if="verificationUrl" class="bg-slate-50 p-3 mt-4 border border-slate-200 rounded break-all text-xs text-slate-700 font-mono select-all text-left max-h-32 overflow-y-auto">
+          {{ verificationUrl }}
+        </div>
+        <p v-if="verificationQrCode" class="text-xs text-slate-400 mt-4 animate-pulse">Waiting for wallet presentation...</p>
+      </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mb-6">
-  <h3 class="text-md font-medium text-slate-900 mb-4">1. Scan patient's prescription.</h3>
-  
-  <form @submit.prevent="handleSearch" class="flex flex-col gap-4 w-full">
-    
-    <input 
-      v-model="searchId" 
-      type="text" 
-      placeholder="Prescription ID (urn:uuid:rx-...)" 
-      required 
-      class="w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-3 border bg-slate-50" 
-    />
+      <div v-else class="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
+        <div class="flex justify-between items-center mb-6 px-2">
+          <span class="text-sm text-slate-600 font-medium">Pharmacy: <span class="text-teal-700 truncate block max-w-[200px]">{{ pharmacyDid }}</span></span>
+          <button @click="resetSession" class="text-xs text-red-600 hover:underline">New Patient / Logout</button>
+        </div>
+        
+        <div class="mb-6 p-3 rounded-md bg-green-50 border border-green-200 text-center">
+          <span class="text-sm font-medium text-green-800">✓ Prescription verified via SSI</span>
+        </div>
 
-    <Button 
-      type="submit" 
-      :loading="isLoading" 
-      class="w-full py-3 h-12 flex justify-center items-center"
-    >
-      Verify
-    </Button>
-  </form>
-</div>
+        <div v-if="dispenseError" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
+          <h3 class="text-sm font-medium text-red-800">Dispense Error</h3>
+          <div class="mt-2 text-sm text-red-700">{{ dispenseError }}</div>
+        </div>
 
-        <div v-if="prescription" class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden transition-all">
-          <div class="p-6 border-b border-slate-100 bg-slate-50">
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="text-lg font-bold text-slate-900">Prescription Found</h3>
-                <p class="text-xs text-slate-500 font-mono mt-1">{{ prescription.id }}</p>
-              </div>
-              <span :class="prescription.status === 'active' ? 'bg-teal-100 text-teal-800' : 'bg-slate-200 text-slate-800'" class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full uppercase">
-                {{ prescription.status }}
-              </span>
+        <div v-if="dispenseSuccess" class="mb-6 p-4 rounded-md bg-green-50 border border-green-200">
+          <h3 class="text-sm font-medium text-green-800">Success</h3>
+          <div class="mt-2 text-sm text-green-700">Medication successfully dispensed and recorded on the blockchain.</div>
+        </div>
+
+        <div class="space-y-6">
+          <div class="bg-slate-50 p-4 rounded-md border border-slate-200">
+             <h4 class="text-sm font-bold text-slate-800 mb-2">Prescription Details (From VC)</h4>
+             <p class="text-sm text-slate-600"><span class="font-medium">Patient:</span> {{ verifiedData?.id }}</p>
+             <p class="text-sm text-slate-600"><span class="font-medium">Medication:</span> {{ verifiedData?.medication?.concept?.coding?.[0]?.display || 'N/A' }}</p>
+             <p class="text-sm text-slate-600"><span class="font-medium">Refills Allowed:</span> {{ verifiedData?.dispenseRequest?.numberOfRepeatsAllowed }}</p>
+          </div>
+
+          <div v-if="blockchainPrescription">
+            <div v-if="blockchainPrescription.status !== 'completed'">
+              <form @submit.prevent="handleDispense">
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Product Twin Link (Batch/Item ID)</label>
+                  <input v-model="productLink" type="text" placeholder="urn:epc:id:sgtin:..." required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2.5 border bg-slate-50" />
+                </div>
+                <Button type="submit" :loading="isLoading" class="w-full">Confirm Dispense</Button>
+              </form>
+            </div>
+            <div v-else class="text-center py-4">
+              <p class="text-red-600 font-medium">This prescription is already completed on the blockchain and can't be dispensed anymore.</p>
             </div>
           </div>
           
-          <div class="p-6 space-y-4">
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p class="text-slate-500 mb-1">Doctor Issuer</p>
-                <p class="font-medium text-slate-900 truncate" :title="prescription.issuerDID">{{ prescription.issuerDID }}</p>
-              </div>
-              <div>
-                <p class="text-slate-500 mb-1">Validity</p>
-                <p class="font-medium text-slate-900">{{ new Date(prescription.expirationDate).toLocaleDateString() }}</p>
-              </div>
-            </div>
-
-            <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 flex justify-between items-center">
-              <div>
-                <p class="text-slate-500 text-xs uppercase tracking-wider mb-1">Remaining Refills</p>
-                <p class="text-2xl font-bold" :class="prescription.refillCounter > 0 ? 'text-teal-600' : 'text-red-600'">
-                  {{ prescription.refillCounter }}
-                </p>
-              </div>
-              <div v-if="prescription.productLinkID" class="text-right">
-                <p class="text-slate-500 text-xs mb-1">Last Product Batch</p>
-                <p class="font-mono text-sm text-slate-700">{{ prescription.productLinkID }}</p>
-              </div>
-            </div>
-            <form v-if="prescription.status === 'active' && prescription.refillCounter > 0" @submit.prevent="handleDispense" class="pt-4 border-t border-slate-100">
-              <h4 class="text-md font-medium text-slate-900 mb-3">2. Dispense Medication</h4>
-              <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Physical Product ID</label>
-                <input v-model="productLink" type="text" placeholder="Ex: epc:id:sgtin:..." required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2 border bg-slate-50" />
-              </div>
-              
-              <Button type="submit" :loading="isLoading" class="w-full">Confirme Dispense</Button>
-            </form>
-
-            <div v-else class="text-center py-4">
-              <p class="text-red-600 font-medium">This prescription is already completed and can't be dispensed anymore.</p>
-            </div>
+          <div v-else class="text-center py-4">
+             <p class="text-slate-500 text-sm animate-pulse">Checking blockchain status for this prescription...</p>
           </div>
         </div>
-
       </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
-const { isLoading, errorMessage, prescription, dispenseSuccess, getPrescription, dispense, reset } = usePharmacy()
+import { watch } from 'vue'
+
+const { isLoading, errorMessage: dispenseError, prescription: blockchainPrescription, dispenseSuccess, getPrescription, dispense, reset: resetDispense } = usePharmacy()
+const { isVerified, verificationUrl, verificationQrCode, errorMessage: verificationError, verifiedData, startVerification, resetVerification } = useSsiVerification()
+
 const isLoggedIn = ref(false)
 const pharmacyDid = ref('')
-const searchId = ref('')
-const productLink = ref('')
 const isLoggingIn = ref(false)
+const authError = ref('')
+const productLink = ref('')
 
 const login = async () => {
   if (pharmacyDid.value.trim() === '') return
   isLoggingIn.value = true
-  errorMessage.value = ''
+  authError.value = ''
   try {
     await $fetch(`/api/blockchain/trust-registry/${encodeURIComponent(pharmacyDid.value)}/validate`, {
       params: { role: 'pharmacy' }
     })
     isLoggedIn.value = true
+    
+    // Inicia verificação do paciente após o login
+    await startVerification('PrescriptionCredential')
   } catch (e) {
-    errorMessage.value = e.data?.statusMessage || 'Access Denied: Invalid DID or missing Pharmacy credentials.'
+    authError.value = e.data?.statusMessage || 'Access Denied: Invalid DID or missing Pharmacy credentials.'
   } finally {
     isLoggingIn.value = false
   }
 }
 
-const handleSearch = async () => {
-  await getPrescription(searchId.value.trim())
-  productLink.value = '' 
-}
+// Quando a credencial for verificada, busca o status atualizado na blockchain
+watch(isVerified, async (verified) => {
+  if (verified && verifiedData.value) {
+    // Nota: você precisa garantir que o VC id está sendo repassado ou extraído corretamente
+    // Se o seu VC joga o ID num campo específico, ajuste abaixo. Exemplo:
+    const vcId = verifiedData.value.jti || verifiedData.value.id || 'urn:uuid:123' 
+    await getPrescription(vcId)
+  }
+})
 
 const handleDispense = async () => {
-  await dispense(prescription.value.id, prescription.value.issuerDID, pharmacyDid.value, productLink.value.trim())
+  await dispense(blockchainPrescription.value.id, pharmacyDid.value, productLink.value)
+}
+
+const resetSession = () => {
+  isLoggedIn.value = false
+  pharmacyDid.value = ''
+  authError.value = ''
   productLink.value = ''
+  resetVerification()
+  resetDispense()
 }
 </script>

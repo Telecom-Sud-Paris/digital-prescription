@@ -33,7 +33,20 @@ export default defineEventHandler(async (event) => {
         console.log(`[Webhook] Prescription ${vcId} registered on-chain. Refills: ${refills}, issued by ${issuerDid}`)
       }
       
-      console.log(`[Webhook] Anchoring VC ${vcId} (${credentialType}) for ${subjectDid} issued by ${issuerDid}`)
+      // if its a doctor/pharmacy, add it in the Trust Registry with the role
+      if (credentialType == 'HealthcareProfessionalCredential' || credentialType == "AuthorizedDispenserCredential") {
+        const role = credentialType === 'HealthcareProfessionalCredential' ? 'doctor' : 'pharmacy'
+        await $fetch('/api/blockchain/trust-registry/register', {
+          method: 'POST',
+          body: {
+            DID: subjectDid,
+            role: role,
+            addedBy: issuerDid
+          }
+        })
+        console.log(`[Webhook] role ${role} granted to ${subjectDid} in the Trust Registry.`)
+      }
+
       // anchor credential in the Revocation Registry
       await $fetch('/api/blockchain/revocation-registry/register', {
         method: 'POST',
@@ -48,19 +61,7 @@ export default defineEventHandler(async (event) => {
       })
       console.log(`[Webhook] revocation registry updated with VC ${vcId}`)
 
-      // if its a doctor/pharmacy, add it in the Trust Registry with the role
-      if (credentialType == 'HealthcareProfessionalCredential' || credentialType == "AuthorizedDispenserCredential") {
-        const role = credentialType === 'HealthcareProfessionalCredential' ? 'doctor' : 'pharmacy'
-        await $fetch('/api/blockchain/trust-registry/register', {
-          method: 'POST',
-          body: {
-            DID: subjectDid,
-            role: role,
-            addedBy: issuerDid
-          }
-        })
-        console.log(`[Webhook] role ${role} granted to ${subjectDid} in the Trust Registry.`)
-      }
+      
 
       
 

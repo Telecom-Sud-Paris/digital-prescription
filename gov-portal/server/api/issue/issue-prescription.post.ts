@@ -1,14 +1,14 @@
 // server/api/issue-vc.post.ts
 import { randomUUID } from 'crypto'
 
-const DOCTOR_DID = "did:jwk:eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiRE9DVE9SX0tFWV9JRDAxIiwieCI6IlpYQzFRV0VSQVNERlpYQzFRV0VSQVNERlFRIn0" // DID fictício para o MVP
+const DOCTOR_DID = "did:jwk:eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiRE9DVE9SX0tFWV9JRDAxIiwieCI6IlpYQzFRV0VSQVNERlpYQzFRV0VSQVNERlFRIn0" 
 const DOCTOR_JWK = {
   type: "jwk",
   jwk: {
     kty: "OKP",
     d: "JvJIpga2GD8LJeRu4Sv-mL4thE31DuFlr9PA04CIoZY", 
     crv: "Ed25519",
-    kid: "DOCTOR_KEY_ID01",
+    kid: "iJMS5bkZVIlncfq_Lf_SuxJ2JtQ5Hvaz7tWPnAjUUds",
     x: "FZdvwC8aGhRwqzWptej0NZgtwYAI1SyFg1mKDETOfqE"
   }
 }
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     "@context": ["https://www.w3.org/2018/credentials/v1"],
     "id": vcId,
     "type": ["VerifiableCredential", "PrescriptionCredential"],
-    "issuer": { "id": doctorDid }, 
+    "issuer": { "id": DOCTOR_DID }, 
     "credentialSubject": {
       "id": patientDid,
       "resourceType": "MedicationRequest",

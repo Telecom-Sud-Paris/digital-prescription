@@ -21,9 +21,9 @@ export default defineEventHandler(async (event) => {
   const response = await $fetch('https://verifier.demo.walt.id/openid4vc/verify', {
     method: 'POST',
     headers: {
-      'authorizeBaseUrl': 'openid4vp://authorize', // OBRIGATÓRIO PARA QR CODE
-      'responseMode': 'direct_post',               // OBRIGATÓRIO PARA O WEBHOOK
-      'statusCallbackUri': `${ngrokUrl}/api/verify/webhook?stateId=${stateId}`, // AQUI USA O ARQUIVO CORRETO
+      'authorizeBaseUrl': 'openid4vp://authorize', 
+      'responseMode': 'direct_post',              
+      'statusCallbackUri': `${ngrokUrl}/api/verify/webhook?stateId=${stateId}`,
       'stateId': stateId,
       'Content-Type': 'application/json'
     },

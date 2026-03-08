@@ -13,9 +13,9 @@
         <h3 class="text-lg font-medium text-slate-900 mb-4">Healthcare Professional Access</h3>
         <p class="text-sm text-slate-500 mb-6">Insert your DID to access the system.</p>
         
-        <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
+        <div v-if="authError" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
           <h3 class="text-sm font-medium text-red-800">Authentication Error</h3>
-          <div class="mt-2 text-sm text-red-700">{{ errorMessage }}</div>
+          <div class="mt-2 text-sm text-red-700">{{ authError }}</div>
         </div>
 
         <form @submit.prevent="login">
@@ -25,7 +25,7 @@
         </form>
       </div>
 
-      <div v-else-if="!isPatientVerified" class="bg-white p-8 rounded-xl shadow-sm border border-slate-100 text-center">
+      <div v-else-if="!isVerified" class="bg-white p-8 rounded-xl shadow-sm border border-slate-100 text-center">
         <div class="flex justify-between items-center mb-6 px-2">
           <span class="text-sm text-slate-600 font-medium">Doctor: <span class="text-teal-700 truncate block max-w-[200px]">{{ doctorDid }}</span></span>
           <button @click="resetSession" class="text-xs text-red-600 hover:underline">Cancel & Logout</button>
@@ -34,9 +34,9 @@
         <h3 class="text-lg font-medium text-slate-900 mb-2">Patient Verification</h3>
         <p class="text-sm text-slate-500 mb-6">Ask the patient to scan this QR Code to present their PatientCredential.</p>
 
-        <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200 text-left">
+        <div v-if="verificationError" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200 text-left">
           <h3 class="text-sm font-medium text-red-800">Verification Error</h3>
-          <div class="mt-2 text-sm text-red-700">{{ errorMessage }}</div>
+          <div class="mt-2 text-sm text-red-700">{{ verificationError }}</div>
         </div>
 
         <div class="mt-6 flex justify-center">
@@ -63,9 +63,9 @@
           <span class="text-sm font-medium text-green-800">✓ Patient identity verified via SSI</span>
         </div>
 
-        <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
+        <div v-if="issueError" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
           <h3 class="text-sm font-medium text-red-800">Error</h3>
-          <div class="mt-2 text-sm text-red-700">{{ errorMessage }}</div>
+          <div class="mt-2 text-sm text-red-700">{{ issueError }}</div>
         </div>
 
         <BaseForm 
@@ -145,17 +145,16 @@
 </template>
 
 <script setup>
+import { watch, onUnmounted, ref } from 'vue'
 import QRCode from 'qrcode'
 
-const { isLoading, offerUrl, generatedVcId, errorMessage, issuePrescription, reset } = usePrescriptionIssuer()
+const { isLoading, offerUrl, generatedVcId, errorMessage: issueError, issuePrescription, reset } = usePrescriptionIssuer()
+const { isVerified, verificationUrl, verificationQrCode, errorMessage: verificationError, verifiedData, startVerification, resetVerification } = useSsiVerification()
+
 const isLoggedIn = ref(false)
 const doctorDid = ref('')
 const isLoggingIn = ref(false)
-const isPatientVerified = ref(false)
-const verificationUrl = ref('')
-const verificationQrCode = ref('')
-const verificationStateId = ref('')
-let verificationPollInterval = null
+const authError = ref('')
 const isIssued = ref(false) 
 let prescriptionPollInterval = null 
 
@@ -172,58 +171,26 @@ const qrCodeDataUrl = ref('')
 const login = async () => {
   if (doctorDid.value.trim() === '') return
   isLoggingIn.value = true
-  errorMessage.value = ''
+  authError.value = ''
   try {
     await $fetch(`/api/blockchain/trust-registry/${encodeURIComponent(doctorDid.value)}/validate`, {
       params: { role: 'doctor' }
     })
     isLoggedIn.value = true
-    await startPatientVerification()
-
+    await startVerification('PatientIdentityCredential')
   } catch (e) {
-    errorMessage.value = e.data?.statusMessage || 'Access Denied: Invalid DID or missing Doctor credentials.'
+    authError.value = e.data?.statusMessage || 'Access Denied: Invalid DID or missing Doctor credentials.'
   } finally {
     isLoggingIn.value = false
   }
 }
-const config = useRuntimeConfig()
-const startPatientVerification = async () => {
-  errorMessage.value = ''
-  try {
-    const NGROK_URL = config.public.NGROK_URL 
-    console.log("Using NGROK URL:", NGROK_URL)
-    const res = await $fetch('/api/verify/init', {
-      method: 'POST',
-      body: { 
-        credentialType: 'PatientIdentityCredential', 
-        ngrokUrl: NGROK_URL 
-      }
-    })
-    
-    verificationUrl.value = res.url
-    verificationStateId.value = res.stateId
-    verificationQrCode.value = await QRCode.toDataURL(res.url, { width: 200, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } })
 
-    verificationPollInterval = setInterval(async () => {
-      try {
-        const statusRes = await $fetch(`/api/verify/status?stateId=${verificationStateId.value}`)
-        if (statusRes && statusRes.status === 'success') {
-          clearInterval(verificationPollInterval)
-          const vc=statusRes.data.policyResults.results[1].policyResults[0].result.vc 
-          form.value.name=vc.credentialSubject.name || 'Error extracting name from VC'
-          form.value.patientDid = vc.credentialSubject.id || 'Error extracting DID from VC'
-          isPatientVerified.value = true
-        }
-      } catch (err) {
-        console.error("Error occurred while polling verification status:", err)
-      }
-    }, 2000)
-
-  } catch (e) {
-    errorMessage.value = "Failed to initiate patient verification. Make sure your NGROK URL is correct."
-    console.error(e)
+watch(isVerified, (verified) => {
+  if (verified && verifiedData.value) {
+    form.value.name = verifiedData.value.name || 'Error extracting name'
+    form.value.patientDid = verifiedData.value.id || 'Error extracting DID'
   }
-}
+})
 
 watch(offerUrl, async (newUrl) => {
   if (newUrl) {
@@ -260,15 +227,12 @@ const handleIssue = async () => {
 
 const resetSession = () => {
   isLoggedIn.value = false
-  isPatientVerified.value = false
   doctorDid.value = ''
-  errorMessage.value = ''
+  authError.value = ''
   form.value.patientDid = ''
   form.value.name = ''
-  verificationUrl.value = ''
-  verificationQrCode.value = ''
   
-  if (verificationPollInterval) clearInterval(verificationPollInterval)
+  resetVerification()
   if (prescriptionPollInterval) clearInterval(prescriptionPollInterval)
 }
 
@@ -283,6 +247,6 @@ const resetFormAndModal = () => {
 
 onUnmounted(() => {
   if (prescriptionPollInterval) clearInterval(prescriptionPollInterval)
-  if (verificationPollInterval) clearInterval(verificationPollInterval)
+  resetVerification()
 })
 </script>

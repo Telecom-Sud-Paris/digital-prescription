@@ -2,16 +2,16 @@ export default defineEventHandler(async (event) => {
     try {
         const body = await readBody(event);
         const { DID, role, addedBy } = body;
-
-        if (!DID || !role || !addedBy) {
+        const cleanDID = decodeURIComponent(DID);
+        if (!cleanDID || !role || !addedBy) {
             throw createError({
                 statusCode: 400,
                 statusMessage: 'Missing required fields: DID, role, or addedBy',
             });
         }
-        console.log(`Registering issuer: ${DID} with role ${role}`);
+        console.log(`Registering issuer: ${cleanDID} with role ${role}`);
 
-        const result = await trustedIssuerContract.submitTransaction('registerIssuer', DID, role, addedBy);
+        const result = await trustedIssuerContract.submitTransaction('registerIssuer', cleanDID, role, addedBy);
         
         return {
             message: 'Trusted issuer registered',

@@ -1,12 +1,12 @@
 export default defineEventHandler(async (event) => {
-  const did = getRouterParam(event, 'did')
+  let did = getRouterParam(event, 'did') as string
   const query = getQuery(event)
   const role = query.role as string
   //console.log(`Validating DID ${did} for role ${role}`)
   if (!did || !role) {
     throw createError({ statusCode: 400, statusMessage: 'Missing DID or role parameter' })
   }
-
+  did=decodeURIComponent(did) // ensure we decode the DID in case it was URL-encoded
   try {
     const result = await trustedIssuerContract.evaluateTransaction('validateIssuer', did, role);
     return { valid: result.toString() === 'true' }

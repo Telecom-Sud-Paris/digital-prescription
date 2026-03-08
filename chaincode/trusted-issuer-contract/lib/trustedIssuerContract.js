@@ -30,23 +30,24 @@ class TrustedIssuerContract extends Contract {
     
 
     async registerIssuer(ctx, DID, role, addedBy) {
-        const exists = await this.issuerExists(ctx, DID);
+        const cleanDID = decodeURIComponent(DID);
+        const exists = await this.issuerExists(ctx, cleanDID);
         if (exists) {
-            throw new Error(`Issuer ${DID} already registered.`);
+            throw new Error(`Issuer ${cleanDID} already registered.`);
         }
         const allowedRoles = ['doctor', 'pharmacy', 'government'];
         if (!allowedRoles.includes(role)) {
             throw new Error(`invalid role: ${role}. allowed: ${allowedRoles.join(', ')}`);
         }
 
-        const newIssuer = new TrustedIssuer(DID, role, addedBy);
+        const newIssuer = new TrustedIssuer(cleanDID, role, addedBy);
         newIssuer.registeredAt = new Date(ctx.stub.getTxTimestamp().seconds.low * 1000).toISOString();
         const buffer = ContractUtils.objToBuffer(newIssuer);
         
-        await ctx.stub.putState(DID, buffer);
+        await ctx.stub.putState(cleanDID, buffer);
         
         ctx.stub.setEvent('IssuerRegistered', Buffer.from(JSON.stringify(newIssuer)));
-        console.info(`New Issuer registered: ${DID} as ${role}`);
+        console.info(`New Issuer registered: ${cleanDID} as ${role}`);
         return JSON.stringify(newIssuer);
     }
 
@@ -54,6 +55,7 @@ class TrustedIssuerContract extends Contract {
     async validateIssuer(ctx, DID, requiredRole) {
         try {
             const issuer = await this.getIssuerHelper(ctx, DID);
+            DID=issuer.did;
             if (!issuer.active) {
                 throw new Error(`Issuer ${DID} is revoked.`);
             }
@@ -75,6 +77,7 @@ class TrustedIssuerContract extends Contract {
     async revokeIssuer(ctx, DID) {
         const issuer = await this.getIssuerHelper(ctx, DID)
         issuer.active = false;
+        DID=issuer.did; // ensure we have the correct DID format (in case it was encoded in the input)
         await ctx.stub.putState(DID, ContractUtils.objToBuffer(issuer));
         console.info(`${DID} had its issuer rights revoked`)
         return JSON.stringify(issuer);
@@ -82,16 +85,18 @@ class TrustedIssuerContract extends Contract {
 
     // === Helpers ===
     async issuerExists(ctx, DID) {
-        const buffer = await ctx.stub.getState(DID);
+        const cleanDID = decodeURIComponent(DID);
+        const buffer = await ctx.stub.getState(cleanDID);
         return (!!buffer && buffer.length > 0);
     }
 
     async getIssuerHelper(ctx, DID) {
-        const exists = await this.issuerExists(ctx, DID);
+        const cleanDID = decodeURIComponent(DID);
+        const exists = await this.issuerExists(ctx, cleanDID);
         if (!exists) {
-            throw new Error(`issuer ${DID} does not exist`);
+            throw new Error(`issuer ${cleanDID} does not exist`);
         }
-        const buffer = await ctx.stub.getState(DID);
+        const buffer = await ctx.stub.getState(cleanDID);
         return ContractUtils.bufferToObj(buffer);
     }
 
