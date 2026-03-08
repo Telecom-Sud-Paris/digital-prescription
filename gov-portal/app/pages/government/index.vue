@@ -7,14 +7,7 @@
         </h2>
       </div>
 
-      <div v-if="errorMessage" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
-        <div class="flex">
-          <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-800">Issuance Failed</h3>
-            <div class="mt-2 text-sm text-red-700">{{ errorMessage }}</div>
-          </div>
-        </div>
-      </div>
+      <AlertBox v-if="errorMessage" type="error" :message="errorMessage" class="mb-6" />
 
       <BaseForm 
         :isLoading="isLoading" 
@@ -42,64 +35,24 @@
         </div>
       </BaseForm>
 
-      <Modal :isOpen="!!offerUrl" @close="resetFormAndModal">
-        <div class="text-center">
-          
-          <div v-if="!isIssued">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-teal-100 mb-4">
-              <svg class="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 class="text-lg leading-6 font-medium text-slate-900">Credential Offer</h3>
-            <p class="text-xs text-slate-500 mt-1">Scan the QR code to add the credential to your wallet.</p>
-            
-            <div class="mt-6 flex justify-center">
-              <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="QR Code credential" class="border border-slate-200 rounded-lg p-2 bg-white shadow-sm" />
-              <div v-else class="animate-pulse bg-slate-200 w-[200px] h-[200px] rounded-lg"></div>
-            </div>
-            
-            <div class="bg-slate-50 p-3 mt-4 border border-slate-200 rounded break-all text-xs text-slate-700 font-mono select-all text-left max-h-32 overflow-y-auto">
-              {{ offerUrl }}
-            </div>
-            
-            <div class="mt-6">
-              <a :href="offerUrl" target="_blank" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-teal-600 text-base font-medium text-white hover:bg-teal-700 focus:outline-none sm:text-sm">
-                Open Web Wallet
-              </a>
-            </div>
-          </div>
-
-          <div v-else>
-            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
-              <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h3 class="text-xl leading-6 font-bold text-slate-900">Success!</h3>
-            <p class="text-sm text-slate-600 mt-2">The credential was successfully added to the wallet and anchored on the blockchain.</p>
-          </div>
-          
-          <div class="mt-6">
-            <button @click="resetFormAndModal" class="w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 focus:outline-none sm:text-sm">
-              {{ isIssued ? 'Create New Credential' : 'Cancel' }}
-            </button>
-          </div>
-
-        </div>
-      </Modal>
+      <IssuanceOfferModal 
+        :isOpen="!!offerUrl"
+        :isIssued="isIssued"
+        :offerUrl="offerUrl"
+        :qrCodeDataUrl="qrCodeDataUrl"
+        :credentialName="form.credentialType"
+        actionButtonText="Create New Credential"
+        @close="resetFlow"
+      />
 
     </div>
   </div>
 </template>
 
 <script setup>
-import QRCode from 'qrcode'
 
-const { isLoading, offerUrl, generatedVcId, errorMessage, issue, reset } = useCredentialIssuer()
-const qrCodeDataUrl = ref('')
-const isIssued = ref(false)
-let pollInterval = null
+
+const { isLoading, offerUrl, generatedVcId, errorMessage, issue, reset: resetIssuer } = useCredentialIssuer()
 
 const form = ref({
   credentialType: '',
@@ -107,52 +60,20 @@ const form = ref({
   name: ''
 })
 
-watch(offerUrl, async (newUrl) => {
-  if (newUrl) {
-    try {
-      qrCodeDataUrl.value = await QRCode.toDataURL(newUrl, { 
-        width: 200, 
-        margin: 2,
-        color: { dark: '#0f172a', light: '#ffffff' }
-      })
-    } catch (err) {
-      console.error('error generating qrcode locally:', err)
-      errorMessage.value = 'Fail to generate QR code. Please try again.'
-    }
-  } else {
-    qrCodeDataUrl.value = ''
-  }
-})
+const { qrCodeDataUrl } = useQrCode(offerUrl)
 
-watch(generatedVcId, (newId) => {
-  if (newId) {
-    pollInterval = setInterval(async () => {
-      try {
-        await $fetch(`/api/blockchain/revocation-registry/${newId}`)
-        isIssued.value = true
-        clearInterval(pollInterval)
-      } catch (e) {
-      }
-    }, 3000)
-  } else {
-    clearInterval(pollInterval)
-    isIssued.value = false
-  }
-})
-
-onUnmounted(() => {
-  if (pollInterval) clearInterval(pollInterval)
-})
+const { isConfirmed: isIssued, stopPolling } = useBlockchainPolling(
+  generatedVcId, 
+  (id) => `/api/blockchain/revocation-registry/${id}`
+)
 
 const handleIssue = async () => {
-  console.log('Issuing credential with form data:', form.value)
   await issue({ ...form.value })
 }
 
-const resetFormAndModal = () => {
-  reset() 
-  if (pollInterval) clearInterval(pollInterval)
-  isIssued.value = false
+const resetFlow = () => {
+  resetIssuer() 
+  stopPolling()
   form.value.credentialType = ''
   form.value.subjectDid = ''
   form.value.name = ''

@@ -38,9 +38,7 @@
           <span class="text-sm font-medium text-green-800">✓ Patient identity verified via SSI</span>
         </div>
 
-        <div v-if="issueError" class="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
-          <div class="mt-2 text-sm text-red-700">{{ issueError }}</div>
-        </div>
+        <AlertBox v-if="issueError" type="error" :message="issueError" class="mb-6" />
 
         <BaseForm
           :isLoading="isLoading"
@@ -111,8 +109,8 @@ const handleLogin = async (inputDid) => {
 
 watch(isVerified, (verified) => {
   if (verified && verifiedData.value) {
-    form.value.name = verifiedData.value.name || 'Error extracting name'
-    form.value.patientDid = verifiedData.value.id || 'Error extracting DID'
+    form.value.name = verifiedData.value.credentialSubject.name || 'Error extracting name'
+    form.value.patientDid = verifiedData.value.credentialSubject.id || 'Error extracting DID'
   }
 })
 

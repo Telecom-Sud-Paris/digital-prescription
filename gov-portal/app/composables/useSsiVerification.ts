@@ -44,7 +44,7 @@ export function useSsiVerification() {
             
             if (targetCred) {
                const vc = targetCred.policyResults[0].result.vc;
-               verifiedData.value = vc.credentialSubject;
+               verifiedData.value = vc
                isVerified.value = true
             } else {
                errorMessage.value = `Credential ${credentialType} not found in payload`

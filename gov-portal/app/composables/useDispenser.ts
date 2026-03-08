@@ -1,5 +1,5 @@
 
-export function usePharmacy() {
+export function useDispenser() {
   const isLoading = ref(false)
   const errorMessage = ref('')
   const prescription = ref<any>(null)
