@@ -10,7 +10,7 @@ export function usePrescriptionIssuer() {
     errorMessage.value = ''
     console.log(payload)
     try {
-      const response = await $fetch('/api/issue/issue-prescription', {
+      const response = await $fetch('/api/issue/prescription', {
         method: 'POST',
         body: payload
       })

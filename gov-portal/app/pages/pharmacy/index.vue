@@ -124,7 +124,7 @@ watch(isVerified, async (verified) => {
     await getPrescription(vcId)
   }
 })
-console.log('Prescription:', prescription.value)
+//console.log('Prescription:', prescription.value)
 const handleDispense = async () => {
   await dispense(prescription.value.id, prescription.value.issuerDID, pharmacyDid.value, productLink.value)
 }

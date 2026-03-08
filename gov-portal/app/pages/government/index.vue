@@ -50,8 +50,6 @@
 </template>
 
 <script setup>
-
-
 const { isLoading, offerUrl, generatedVcId, errorMessage, issue, reset: resetIssuer } = useCredentialIssuer()
 
 const form = ref({
