@@ -1,19 +1,6 @@
 // server/api/issue-vc.post.ts
 import { randomUUID } from 'crypto'
 
-const DOCTOR_DID = "did:jwk:eyJrdHkiOiJPS1AiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiaUpNUzVia1pWSWxuY2ZxX0xmX1N1eEoySnRRNUh2YXo3dFdQbkFqVVVkcyIsIngiOiJGWmR2d0M4YUdoUndxeldwdGVqME5aZ3R3WUFJMVN5RmcxbUtERVRPZnFFIn0"
-const DOCTOR_JWK = {
-  type: "jwk",
-  jwk: {
-    kty: "OKP",
-    d: "JvJIpga2GD8LJeRu4Sv-mL4thE31DuFlr9PA04CIoZY",
-    crv: "Ed25519",
-    kid: "iJMS5bkZVIlncfq_Lf_SuxJ2JtQ5Hvaz7tWPnAjUUds",
-    x: "FZdvwC8aGhRwqzWptej0NZgtwYAI1SyFg1mKDETOfqE"
-  }
-}
-
-
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { doctorDid, patientDid, medication, refills, expirationDate } = body

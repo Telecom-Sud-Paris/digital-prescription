@@ -23,16 +23,18 @@
             <option value="AuthorizedDispenserCredential">Authorized Dispenser (Pharmacy)</option>
           </select>
         </div>
-
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Subject DID</label>
-          <input v-model="form.subjectDid" type="text" placeholder="did:key:..." required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2.5 border bg-slate-50" />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
-          <input v-model="form.name" type="text" placeholder="Ex: John Doe" required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2.5 border bg-slate-50" />
-        </div>
+        <BaseInput 
+              label="Subject DID" 
+              v-model="form.subjectDid" 
+              required 
+              placeholder="did:key:..."
+            />
+        <BaseInput 
+              label="name" 
+              v-model="form.name" 
+              required 
+              placeholder="Ex: John Doe"
+            />
       </BaseForm>
 
       <IssuanceOfferModal 

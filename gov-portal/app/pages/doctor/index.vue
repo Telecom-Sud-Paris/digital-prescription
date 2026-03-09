@@ -45,27 +45,40 @@
           submitText="Issue Prescription"
           @submit="handleIssue"
           >
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Patient DID</label>
-              <input v-model="form.patientDid" type="text" readonly class="block w-full rounded-md border-slate-200 shadow-sm text-slate-500 sm:text-sm p-2.5 border bg-slate-100 cursor-not-allowed" title="Extracted from verified credential" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
-              <input v-model="form.name" type="text" readonly class="block w-full rounded-md border-slate-200 shadow-sm text-slate-500 sm:text-sm p-2.5 border bg-slate-100 cursor-not-allowed" title="Extracted from verified credential" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Medication (Composition/Name)</label>
-              <input v-model="form.medication" type="text" placeholder="Ex: Amoxiciline 500mg" required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2.5 border bg-slate-50" />
-            </div>
+            <BaseInput 
+              label="Patient DID" 
+              v-model="form.patientDid" 
+              readonly 
+              title="Extracted from verified credential" 
+            />
+
+            <BaseInput 
+              label="Name" 
+              v-model="form.name" 
+              readonly 
+              title="Extracted from verified credential" 
+            />
+            <BaseInput 
+              label="Medication (Composition/Name)" 
+              v-model="form.medication" 
+              placeholder="Ex: Amoxiciline 500mg" 
+              required 
+            />
           <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Refills</label>
-              <input v-model="form.refills" type="number" min="0" required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2.5 border bg-slate-50" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Validity</label>
-              <input v-model="form.expirationDate" type="date" required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2.5 border bg-slate-50" />
-            </div>
+            <BaseInput 
+              label="Refills" 
+              v-model="form.refills" 
+              placeholder="0" 
+              required 
+              type="number" 
+              min="0" 
+            />
+            <BaseInput 
+              label="Validity" 
+              v-model="form.expirationDate" 
+              type="date" 
+              required 
+            />
           </div>
         </BaseForm>
       </div>

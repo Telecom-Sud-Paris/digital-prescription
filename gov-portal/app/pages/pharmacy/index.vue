@@ -88,10 +88,13 @@
               class="pt-4 border-t border-slate-100"
             >
               <h4 class="text-md font-medium text-slate-900 mb-3">Dispense Medication</h4>
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Physical Product ID</label>
-                <input v-model="productLink" type="text" placeholder="Ex: epc:id:sgtin:..." required class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2 border bg-slate-50" />
-              </div>
+              <BaseInput 
+              label="Physical Product ID" 
+              v-model="productLink" 
+              type="text" 
+              placeholder="Ex: epc:id:sgtin:..."
+              required 
+              />
             </BaseForm>
 
             <div v-else class="text-center py-4">
