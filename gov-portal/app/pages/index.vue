@@ -17,6 +17,11 @@
         <h2 class="text-2xl font-semibold mb-2">Pharmacy Portal</h2>
         <p class="text-gray-600">Verify prescriptions and Dispense medication.</p>
       </NuxtLink>
+
+      <NuxtLink to="/generate-did" class="p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow border-t-4 border-pink-600">
+        <h2 class="text-2xl font-semibold mb-2">DID Generator</h2>
+        <p class="text-gray-600">Generate your own DID (simulates what your wallet would do).</p>
+      </NuxtLink>
     </div>
   </div>
 </template>

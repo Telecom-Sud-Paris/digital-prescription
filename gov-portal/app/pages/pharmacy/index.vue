@@ -1,47 +1,42 @@
 <template>
   <div class="min-h-screen bg-slate-50 pt-12 pb-24 px-4 sm:px-6 lg:px-8">
     <div class="max-w-2xl mx-auto">
-      
       <div class="text-center mb-10">
         <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Pharmacy Portal</h2>
         <p class="mt-2 text-sm text-slate-600">Verify on-chain prescriptions via SSI and dispense medications.</p>
       </div>
-
-      <DidLoginForm 
-        v-if="!isLoggedIn"
-        title="Dispenser Access"
-        inputLabel="Your DID (Authorized Pharmacy)"
-        :loading="isLoggingIn"
-        :error="authError"
-        @submit="handleLogin" 
-      />
-
       <SsiQrVerification 
-        v-else-if="!isVerified"
+        v-if="!isLoggedIn"
+        actorRole="Portal"
+        actorDid="Portal Governance"
+        title="Pharmacy Login"
+        description="Scan this QR code with your wallet to present your Authorized Pharmacy Credential."
+        :qrCodeUrl="loginVerification.verificationQrCode.value"
+        :verificationUrl="loginVerification.verificationUrl.value"
+        :error="loginVerification.errorMessage.value || authError"
+        @cancel="handleLogout"
+      />
+      <SsiQrVerification 
+        v-else-if="!prescriptionVerification.isVerified.value"
         actorRole="Pharmacy"
         :actorDid="pharmacyDid"
         title="Scan Prescription"
-        description="Ask the patient to scan this QR Code to present their MedicationRequestCredential."
-        :qrCodeUrl="verificationQrCode"
-        :verificationUrl="verificationUrl"
-        :error="verificationError"
+        description="Ask the patient to scan this QR Code to present their PrescriptionCredential."
+        :qrCodeUrl="prescriptionVerification.verificationQrCode.value"
+        :verificationUrl="prescriptionVerification.verificationUrl.value"
+        :error="prescriptionVerification.errorMessage.value"
         @cancel="handleLogout"
       />
-
       <div v-else class="space-y-6">
-        
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
           <span class="text-sm text-slate-600 font-medium">Pharmacy: <span class="text-teal-700 truncate block max-w-[200px]">{{ pharmacyDid }}</span></span>
           <button @click="handleLogout" class="text-xs text-red-600 hover:underline">Logout</button>
         </div>
-        
         <div class="p-3 rounded-md bg-green-50 border border-green-200 text-center">
           <span class="text-sm font-medium text-green-800">✓ Prescription verified via SSI</span>
         </div>
-
         <AlertBox v-if="dispenseError" type="error" :message="dispenseError" />
         <AlertBox v-if="dispenseSuccess" type="success" message="Medication successfully dispensed and recorded on the blockchain." />
-
         <div v-if="prescription" class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden transition-all">
           <div class="p-6 border-b border-slate-100 bg-slate-50">
             <div class="flex justify-between items-start">
@@ -54,7 +49,6 @@
               </span>
             </div>
           </div>
-          
           <div class="p-6 space-y-4">
             <div class="grid grid-cols-2 gap-4 text-sm">
               <div>
@@ -66,7 +60,6 @@
                 <p class="font-medium text-slate-900">{{ new Date(prescription.expirationDate).toLocaleDateString() }}</p>
               </div>
             </div>
-
             <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 flex justify-between items-center">
               <div>
                 <p class="text-slate-500 text-xs uppercase tracking-wider mb-1">Remaining Refills</p>
@@ -96,46 +89,66 @@
               required 
               />
             </BaseForm>
-
             <div v-else class="text-center py-4">
               <p class="text-red-600 font-medium">This prescription is already completed and can't be dispensed anymore.</p>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-const { did: pharmacyDid, isLoggedIn, isLoggingIn, authError, login, logout } = useDidAuth('pharmacy')
-const { isVerified, verificationUrl, verificationQrCode, errorMessage: verificationError, verifiedData, startVerification, resetVerification } = useSsiVerification()
+const { did: pharmacyDid, isLoggedIn, authError, loginWithVc, logout } = useDidAuth('pharmacy')
+const loginVerification = useSsiVerification()
+const prescriptionVerification = useSsiVerification()
 const { isLoading, errorMessage: dispenseError, prescription, dispenseSuccess, getPrescription, dispense, reset: resetDispense } = useDispenser()
-
 const productLink = ref('')
 
-const handleLogin = async (inputDid) => {
-  const success = await login(inputDid)
-  if (success) startVerification('PrescriptionCredential')
-}
+//login qrcode for the pharmacy
+onMounted(() => {
+  loginVerification.startVerification('AuthorizedDispenserCredential')
+})
 
-watch(isVerified, async (verified) => {
-  if (verified && verifiedData.value) {
-    console.log(verifiedData.value)
-    const vcId = verifiedData.value.id || 'Error extracting credential id'
+//prescription verification after pharmacy login
+watch(loginVerification.isVerified, async (verified) => {
+  if (verified && loginVerification.verifiedData.value) {
+    const vcData = loginVerification.verifiedData.value
+    const extractedDid = vcData.credentialSubject.id
+    const credentialId = vcData.id
+    //check trust registry and revocation registry to confirm if the pharmacy is authorized
+    const success = await loginWithVc(extractedDid, credentialId)
+    if (success) {
+      //release the qr code for the prescription verification
+      prescriptionVerification.startVerification('PrescriptionCredential')
+    } else {
+      loginVerification.resetVerification()
+      loginVerification.startVerification('AuthorizedDispenserCredential')
+    }
+  }
+})
+
+//patient scans the prescription qr code and pharmacy verifies it
+watch(prescriptionVerification.isVerified, async (verified) => {
+  if (verified && prescriptionVerification.verifiedData.value) {
+    const vcId = prescriptionVerification.verifiedData.value.id || 'Error extracting credential id'
     await getPrescription(vcId)
   }
 })
-//console.log('Prescription:', prescription.value)
+
 const handleDispense = async () => {
-  await dispense(prescription.value.id, prescription.value.issuerDID, pharmacyDid.value, productLink.value)
+  if (prescription.value) {
+    await dispense(prescription.value.id, prescription.value.issuerDID, pharmacyDid.value, productLink.value)
+  }
 }
 
 const handleLogout = () => {
   logout()
   productLink.value = ''
-  resetVerification()
   resetDispense()
+  loginVerification.resetVerification()
+  prescriptionVerification.resetVerification()
+  loginVerification.startVerification('AuthorizedDispenserCredential')
 }
 </script>

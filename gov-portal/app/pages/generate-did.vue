@@ -1,6 +1,7 @@
 <template>
   <div class="p-8 max-w-5xl mx-auto">
     <h1 class="text-2xl font-bold mb-6">DID Generator</h1>
+    <p class="text-sm text-gray-600 mb-5">This generator is used for test purposes. In a real application, the DID would be generated in your own wallet. </p>
     
     <div class="flex gap-4 mb-6">
       <Button @click="generate" :loading="loading1">1. Create DID (JWK)</Button>

@@ -6,9 +6,7 @@
           Government Credential Issuer Portal
         </h2>
       </div>
-
       <AlertBox v-if="errorMessage" type="error" :message="errorMessage" class="mb-6" />
-
       <BaseForm 
         :isLoading="isLoading" 
         submitText="Issue Credential" 
@@ -36,7 +34,6 @@
               placeholder="Ex: John Doe"
             />
       </BaseForm>
-
       <IssuanceOfferModal 
         :isOpen="!!offerUrl"
         :isIssued="isIssued"
