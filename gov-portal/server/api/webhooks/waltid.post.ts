@@ -55,8 +55,7 @@ export default defineEventHandler(async (event) => {
           subject: subjectDid,
           issuer: issuerDid,
           credentialType: credentialType,
-          expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-          credentialHash: token.substring(token.length - 16) 
+          expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
         }
       })
       console.log(`[Webhook] revocation registry updated with VC ${vcId}`)
@@ -72,7 +71,6 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 500, statusMessage: error.message })
     }
   } else {
-    // Ignora eventos irrelevantes (ex: 'requested_token') silenciosamente
     //console.log(`[Webhook] Evento ignorado: ${body.type}`)
   }
   return { status: 'received' }

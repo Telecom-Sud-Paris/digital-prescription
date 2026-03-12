@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
     try {
         const body = await readBody(event);
-        const { id, subject, issuer, credentialType, expirationDate, credentialHash } = body;
+        const { id, subject, issuer, credentialType, expirationDate } = body;
 
         const result = await revocationRegistryContract.submitTransaction(
             'registerCredential', 
@@ -9,8 +9,7 @@ export default defineEventHandler(async (event) => {
             subject, 
             issuer, 
             credentialType, 
-            expirationDate || '', 
-            credentialHash || ''
+            expirationDate || ''
         );
         
         return {

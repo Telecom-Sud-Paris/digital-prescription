@@ -12,8 +12,8 @@ class RevocationRegistryContract extends Contract {
 
     async initLedger(ctx) {
             const entries = [
-                new RevocationRegistryEntry("urn:uuid:54321",'did:doctor:123456','did:web:gov.example.country',"HealthcareProfessionalCredential","2026-12-31","hash2424"),
-                new RevocationRegistryEntry("urn:uuid:54321",'did:patient:1234567890abcdef','did:web:gov.example.country',"PatientIdentityCredential","2026-12-31","hash789"),
+                new RevocationRegistryEntry("urn:uuid:54321",'did:doctor:123456','did:web:gov.example.country',"HealthcareProfessionalCredential","2026-12-31"),
+                new RevocationRegistryEntry("urn:uuid:54321",'did:patient:1234567890abcdef','did:web:gov.example.country',"PatientIdentityCredential","2026-12-31"),
             ];
             
             for (const entry of entries) {
@@ -25,12 +25,12 @@ class RevocationRegistryContract extends Contract {
         }
         
 
-    async registerCredential(ctx, id, subject, issuer, credentialType, expirationDate, credentialHash) {
+    async registerCredential(ctx, id, subject, issuer, credentialType, expirationDate) {
         const exists = await this.credentialExists(ctx, id);
         if (exists) {
             throw new Error(`Credential ${id} is already registered.`);
         }
-        const entry = new RevocationRegistryEntry(id, subject, issuer, credentialType, expirationDate, credentialHash);
+        const entry = new RevocationRegistryEntry(id, subject, issuer, credentialType, expirationDate);
         entry.registeredAt = new Date(ctx.stub.getTxTimestamp().seconds.low * 1000).toISOString();
         
         const buffer = ContractUtils.objToBuffer(entry);
