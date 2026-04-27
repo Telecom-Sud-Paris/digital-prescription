@@ -25,8 +25,11 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public:{
-      NGROK_URL: process.env.NGROK_URL
+      NGROK_URL: process.env.NGROK_URL,
+      DT_API_URL: process.env.DT_API_URL || 'http://localhost:3000',
     }
-    
   },
+  devServer: {
+    port: 8000
+  }
 });
