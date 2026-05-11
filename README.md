@@ -1,6 +1,8 @@
 
 ### deployment
 
+Using https://wallet.demo.walt.id/
+
 1. curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts install-fabric.sh && chmod +x install-fabric.sh
 
 2. ./install-fabric.sh docker binary
